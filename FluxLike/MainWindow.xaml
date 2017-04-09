@@ -1,0 +1,54 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        x:Class="FluxLike.MainWindow"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="334" Width="294" StateChanged="MainForm_StateChanged" ShowInTaskbar="False" WindowState="Minimized" Visibility="Visible" ResizeMode="CanMinimize"
+		DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
+		KeyUp="Window_OnKeyUp"
+		Loaded="MainWindow_OnLoaded">
+	<Grid>
+		<StackPanel Margin="10">
+
+			<TextBox x:Name="InputFileName" Height="25" TextWrapping="Wrap" VerticalContentAlignment="Center"/>
+			<Button Content="Save screen color" Margin="0,6,0,0" Width="210" Click="ButtonSaveClick"/>
+			<Grid Margin="0,10,0,0">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="214"/>
+				</Grid.RowDefinitions>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="150"/>
+					<ColumnDefinition Width="10"/>
+					<ColumnDefinition Width="110"/>
+				</Grid.ColumnDefinitions>
+
+				<ListBox Grid.Column="0" x:Name="ListBoxConfigs" IsSynchronizedWithCurrentItem="True" SelectionChanged="ListBoxSelectedItemChanged"/>
+
+				<StackPanel Grid.Column="2" Margin="0,0,12,0">
+					<Button Click="MoveUpConfig">
+						<Image Height="11" Width="57" Source="Resources/arrow_up.png"/>
+					</Button>
+				
+					<Button Margin="0,5,0,0" Click="MoveDownConfig">
+						<Image Height="11" Width="57" Source="Resources/arrow_down.png"/>
+					</Button>
+				
+					<Button Content="Assign Key" Margin="0,5,0,0" Click="AssignKey"/>
+					
+					<TextBlock x:Name="ConfigKeyBinding" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
+				
+					<Button Content="Delete" Margin="0,5,0,0" Click="DeleteConfig"/>
+				</StackPanel>
+			</Grid>
+		</StackPanel>
+		<Grid x:Name="WaitingBindingGrid" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Background="White" Visibility="Collapsed">
+			<StackPanel VerticalAlignment="Center">
+				<TextBlock Text="Press a key" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+				<TextBlock Text="ESC to cancel" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+				<TextBlock Text="Back to delete" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+			</StackPanel>
+		</Grid>
+	</Grid>
+</Window>
