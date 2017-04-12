@@ -12,6 +12,13 @@
 	<Grid>
 		<StackPanel Margin="10">
 
+			<Slider Minimum="2000" Maximum="6600" Interval="10" Margin="0,5,0,0" Value="{Binding KelvinValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+
+			<TextBlock Margin="0,0,0,5">
+				<Run Text="{Binding KelvinValue, UpdateSourceTrigger=PropertyChanged}"/>
+				<Run Text=" K"/>
+			</TextBlock>
+			
 			<TextBox x:Name="InputFileName" Height="25" TextWrapping="Wrap" VerticalContentAlignment="Center"/>
 			<Button Content="Save screen color" Margin="0,6,0,0" Width="210" Click="ButtonSaveClick"/>
 			<Grid Margin="0,10,0,0">

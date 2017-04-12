@@ -28,7 +28,7 @@ namespace FluxLike
 	/// <summary>
 	/// Logique d'interaction pour MainWindow.xaml
 	/// </summary>
-	public partial class MainWindow
+	public partial class MainWindow : INotifyPropertyChanged
 	{
 
 		#region Variables
@@ -40,12 +40,23 @@ namespace FluxLike
 		private NotifyIcon _notifyIcon = new NotifyIcon();
 		public ObservableCollection<Config> Configs;
 		private IntPtr _windowHandle;
+		private int _kelvinValue = 6600;
 
 		#endregion
 
 		#region Propriétés
 
+		public int KelvinValue
+		{
+			get { return _kelvinValue; }
+			set
+			{
+				_kelvinValue = value;
+				NotifyPropertyChanged("KelvinValue");
 
+				ApplyKelvin(value);
+			}
+		}
 
 		#endregion
 
@@ -453,8 +464,6 @@ namespace FluxLike
 			}
 		}
 
-		#endregion
-
 		private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
 		{
 			_windowHandle = (new WindowInteropHelper(this)).Handle;
@@ -482,5 +491,104 @@ namespace FluxLike
 				}
 			}
 		}
+
+		private unsafe void ApplyKelvin(int value)
+		{
+			float kelvin = value;
+			float Temperature = kelvin / 100;
+
+			float Red, Green, Blue = 0;
+
+			if (Temperature <= 66)
+			{
+				Red = 255;
+			}
+			else
+			{
+				Red = Temperature - 60;
+				Red = 329.698727446f * ((float)Math.Pow(Red, -0.1332047592));
+				if (Red < 0) Red = 0;
+				if (Red > 255) Red = 255;
+			}
+
+			if (Temperature <= 66)
+			{
+				Green = Temperature;
+				Green = 99.4708025861f * (float)Math.Log(Green) - 161.1195681661f;
+				if (Green < 0)
+				{
+					Green = 0;
+				}
+
+				if (Green > 255)
+				{
+					Green = 255;
+				}
+			}
+			else
+			{
+				Green = Temperature - 60;
+				Green = 288.1221695283f * ((float)Math.Pow(Green, -0.0755148492));
+
+				if (Green < 0) Green = 0;
+				if (Green > 255) Green = 255;
+			}
+
+
+			if (Temperature >= 66)
+			{
+				Blue = 255;
+			}
+			else
+			{
+				if (Temperature <= 19)
+				{
+					Blue = 0;
+				}
+				else
+				{
+					Blue = Temperature - 10;
+					Blue = 138.5177312231f * (float)Math.Log(Blue) - 305.0447927307f;
+					if (Blue < 0) Blue = 0;
+					if (Blue > 255) Blue = 255;
+				}
+			}
+
+			if(value == 6600)
+			{
+				Red = 255;
+				Green = 255;
+				Blue = 255;
+			}
+
+			short* gArray = stackalloc short[3 * 256];
+
+			for (int ik = 0; ik < 256; ik++)
+			{
+				gArray[ik] = (short)(ik * Red);
+				gArray[256 + ik] = (short)(ik * Green);
+				gArray[512 + ik] = (short)(ik * Blue);
+			}
+
+			_hdc = Graphics.FromHwnd(IntPtr.Zero).GetHdc().ToInt32();
+
+			SetDeviceGammaRamp(_hdc, gArray);
+		}
+
+		#endregion
+
+		#region Implémentation INotifyPropertyChanged
+
+		//INotifyPropertyChanged implementation
+		public event PropertyChangedEventHandler PropertyChanged;
+		private void NotifyPropertyChanged(String propertyName)
+		{
+			if (PropertyChanged != null)
+			{
+				PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+			}
+		}
+
+		#endregion
 	}
 }
