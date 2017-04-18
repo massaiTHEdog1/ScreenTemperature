@@ -73,6 +73,7 @@ namespace FluxLike.Classes
 		    set
 		    {
 			    _keyBinding = value;
+				Save();
 			    NotifyPropertyChanged("KeyBinding");
 		    }
 	    }

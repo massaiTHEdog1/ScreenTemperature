@@ -45,7 +45,7 @@ namespace FluxLike
 		private int _selectedConfigIndex;
 		private Config _selectedConfig;
 		private string _textNameConfig;
-		private bool _isWaitingForKeyInput = false;
+		private bool _isWaitingForKeyInput;
 
 		public ICommand AssignKeyToConfigCommand { get; private set; }
 		public ICommand SaveConfigCommand { get; private set; }
@@ -114,7 +114,12 @@ namespace FluxLike
 
 				if (value != null)
 				{
+					TextNameConfig = value.ConfigName;
 					ApplyConfig(value);
+				}
+				else
+				{
+					TextNameConfig = "";
 				}
 			}
 		}
@@ -380,7 +385,6 @@ namespace FluxLike
 					}
 
 					SelectedConfig.KeyBinding = null;
-					SelectedConfig.Save();
 				}
 				else
 				{
@@ -390,7 +394,6 @@ namespace FluxLike
 					}
 
 					SelectedConfig.KeyBinding = new KeyData(keyEventArgs.Key == Key.System ? keyEventArgs.SystemKey : keyEventArgs.Key, Keyboard.IsKeyDown(Key.LeftShift), Keyboard.IsKeyDown(Key.LeftAlt), Keyboard.IsKeyDown(Key.LeftCtrl));
-					SelectedConfig.Save();
 
 					uint mask = SelectedConfig.KeyBinding.Alt ? (uint)0x0001 : 0;
 					mask = mask | (SelectedConfig.KeyBinding.Control ? (uint)0x0002 : 0);
@@ -481,9 +484,9 @@ namespace FluxLike
 
 			_hdc = Graphics.FromHwnd(IntPtr.Zero).GetHdc().ToInt32();
 
-			bool retVal = GetDeviceGammaRamp(_hdc, gArray);//On récupère les données de l'écran
+			bool retVal = GetDeviceGammaRamp(_hdc, gArray);//Get screen data
 
-			if (retVal)//Si ça a fonctionné
+			if (retVal)//If it' ok
 			{
 				List<short> rgb = new List<short>();
 
@@ -492,20 +495,34 @@ namespace FluxLike
 					rgb.Add(gArray[i]);
 				}
 
-				Config conf = new Config(TextNameConfig == "" ? "config" : TextNameConfig);
-				conf.RGB = rgb.ToArray();
-				conf.Order = Configs.Count;
+				Config configToModify = Configs.FirstOrDefault(x => x.ConfigName == TextNameConfig);
 
-				Configs.Add(conf);
+				if (configToModify == null)//If the config doesn't exist
+				{
+					configToModify = new Config(TextNameConfig == "" ? "config" : TextNameConfig);
+					configToModify.RGB = rgb.ToArray();
+					configToModify.Order = Configs.Count;
 
-				SelectedConfig = conf;
+					Configs.Add(configToModify);
+				}
+				else//If the config already exists
+				{
+					if (MessageBox.Show(this, $"Are you sure you want to erase this config: {TextNameConfig}?", "", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+					{
+						configToModify.RGB = rgb.ToArray();
+					}
+					else
+					{
+						return;//Maybe we just want to change the name so we souldn't change current screen color
+					}
+				}
+
+				SelectedConfig = configToModify;
 			}
 			else
 			{
 				MessageBox.Show("Can't get screen data. \r\nTry again or restart application.", "Error");
 			}
-
-			TextNameConfig = "";
 		}
 
 		private void AssignKeyToConfig(object obj)
