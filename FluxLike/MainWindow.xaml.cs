@@ -38,14 +38,28 @@ namespace FluxLike
 		public static string configDirectory;
 		private NamedPipeServerStream _pipeServer;
 		private NotifyIcon _notifyIcon = new NotifyIcon();
-		public ObservableCollection<Config> Configs;
+		
 		private IntPtr _windowHandle;
 		private int _kelvinValue = 6600;
+		private ObservableCollection<Config> _configs;
+		private int _selectedConfigIndex;
+		private Config _selectedConfig;
+		private string _textNameConfig;
+		private bool _isWaitingForKeyInput = false;
+
+		public ICommand AssignKeyToConfigCommand { get; private set; }
+		public ICommand SaveConfigCommand { get; private set; }
+		public ICommand DeleteConfigCommand { get; private set; }
+		public ICommand MoveConfigUpCommand { get; private set; }
+		public ICommand MoveConfigDownCommand { get; private set; }
 
 		#endregion
 
-		#region Propriétés
+		#region Properties
 
+		/// <summary>
+		/// Kelvin slider's value
+		/// </summary>
 		public int KelvinValue
 		{
 			get { return _kelvinValue; }
@@ -58,9 +72,82 @@ namespace FluxLike
 			}
 		}
 
+		/// <summary>
+		/// List of available configs
+		/// </summary>
+		public ObservableCollection<Config> Configs
+		{
+			get
+			{
+				return _configs;
+			}
+			set
+			{
+				_configs = value;
+				NotifyPropertyChanged("Configs");
+			}
+		}
+
+		/// <summary>
+		/// Index of the selected config
+		/// </summary>
+		public int SelectedConfigIndex
+		{
+			get { return _selectedConfigIndex; }
+			set
+			{
+				_selectedConfigIndex = value;
+				NotifyPropertyChanged("SelectedConfigIndex");
+			}
+		}
+
+		/// <summary>
+		/// The selected config
+		/// </summary>
+		public Config SelectedConfig
+		{
+			get { return _selectedConfig; }
+			set
+			{
+				_selectedConfig = value;
+				NotifyPropertyChanged("SelectedConfig");
+
+				if (value != null)
+				{
+					ApplyConfig(value);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Value of textbox for the name of the config
+		/// </summary>
+		public string TextNameConfig
+		{
+			get { return _textNameConfig; }
+			set
+			{
+				_textNameConfig = value;
+				NotifyPropertyChanged("TextNameConfig");
+			}
+		}
+
+		/// <summary>
+		/// Are we waiting for an input?
+		/// </summary>
+		public bool IsWaitingForKeyInput
+		{
+			get { return _isWaitingForKeyInput; }
+			set
+			{
+				_isWaitingForKeyInput = value;
+				NotifyPropertyChanged("IsWaitingForKeyInput");
+			}
+		}
+
 		#endregion
 
-		#region Methodes
+		#region Methods
 
 		#region DLLs
 
@@ -90,18 +177,16 @@ namespace FluxLike
 
 		#endregion
 
-		#region Constructeur
+		#region Constructor
 
 		public MainWindow()
 		{
-			InitializeComponent();
-
 			executableDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
 			configDirectory = executableDirectory + @"\Configs";
 
 			bool exists = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location)).Length > 1;
 
-			if (exists)//Si le programme est déjà ouvert
+			if (exists)//If this program already has an instance
 			{
 				try
 				{
@@ -116,19 +201,25 @@ namespace FluxLike
 					Debug.WriteLine(oEX.Message);
 				}
 			}
-			else//Si le programme n'est pas encore ouvert
+			else//If the program is not already running
 			{
 				_pipeServer = new NamedPipeServerStream("instance", PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
 
 				_pipeServer.BeginWaitForConnection(WaitForConnectionCallBack, _pipeServer);
 			}
 
+			AssignKeyToConfigCommand = new RelayCommand(AssignKeyToConfig);
+			SaveConfigCommand = new RelayCommand(SaveConfig);
+			DeleteConfigCommand = new RelayCommand(DeleteConfig);
+			MoveConfigUpCommand = new RelayCommand(MoveConfigUp);
+			MoveConfigDownCommand = new RelayCommand(MoveConfigDown);
+
+			//When we log-in to windows, the screen goes back to normal so with this event we avoid this
 			SystemEvents.SessionSwitch += SystemEventsOnSessionSwitch;
 
 			_notifyIcon.Icon = Properties.Resources.icon;
-			_notifyIcon.Click += NotifyIconOnDoubleClick;
+			_notifyIcon.Click += NotifyIconOnClick;
 			_notifyIcon.Visible = true;
-			Visibility = Visibility.Collapsed;
 
 			try
 			{
@@ -136,7 +227,7 @@ namespace FluxLike
 			}
 			catch (Exception e)
 			{
-				MessageBox.Show($"Impossible de créer le dossier pour les configs.\r\nEssayez de redémarrer l'application.\r\nErreur:\r\n{e.Message}", "Erreur");
+				MessageBox.Show($"Can't create config directory.\r\nTry restarting application.\r\nErrorr:\r\n{e.Message}", "Error");
 				Environment.Exit(0);
 			}
 
@@ -155,18 +246,26 @@ namespace FluxLike
 				}
 				catch (Exception e)
 				{
-					MessageBox.Show($"Fichier {file} corrompu.\r\nImpossible d'utiliser cette configuration.\r\nErreur:\r\n{e.Message}", "Erreur");
+					MessageBox.Show($"File {file} corrupt.\r\nCan't use this config.\r\nError:\r\n{e.Message}", "Error");
 				}
 			}
 
 			Configs = new ObservableCollection<Config>(Configs.OrderBy(conf => conf.Order).ToList());
-			ListBoxConfigs.ItemsSource = Configs;
+
+			if (Configs.Count > 0)
+			{
+				SelectedConfig = Configs[0];
+			}
+
+			WindowState = WindowState.Minimized;
+
+			InitializeComponent();
 		}
 
 		#endregion
 
 		/// <summary>
-		/// Récupère les messages windows
+		/// Messages handler
 		/// </summary>
 		/// <param name="hwnd"></param>
 		/// <param name="msg"></param>
@@ -180,22 +279,14 @@ namespace FluxLike
 			{
 				Key key = KeyInterop.KeyFromVirtualKey(wParam.ToInt32());
 
-				foreach (Config conf in Configs)
-				{
-					if (conf.KeyBinding?.Key == key)
-					{
-						ApplyConfig(conf);
-						ListBoxConfigs.SelectedItem = conf;
-						break;
-					}
-				}
+				SelectedConfig = Configs.FirstOrDefault(x => x.KeyBinding.Key == key);
 			}
 
 			return IntPtr.Zero;
 		}
 
 		/// <summary>
-		/// Lorsqu'on se connecte à la session
+		/// When we log in to the session
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="sessionSwitchEventArgs"></param>
@@ -203,26 +294,25 @@ namespace FluxLike
 		{
 			if (sessionSwitchEventArgs.Reason == SessionSwitchReason.SessionUnlock || sessionSwitchEventArgs.Reason == SessionSwitchReason.SessionLogon)
 			{
-				ApplyConfig(ListBoxConfigs.SelectedItem as Config);
+				ApplyConfig(SelectedConfig);
 			}
 		}
 
 		/// <summary>
-		/// Lorsque l'on clique sur l'icone de l'application
+		/// When we click on notifyIcon
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="eventArgs"></param>
-		private void NotifyIconOnDoubleClick(object sender, EventArgs eventArgs)
+		private void NotifyIconOnClick(object sender, EventArgs eventArgs)
 		{
-			Visibility = Visibility.Visible;
-			WindowState = WindowState.Normal;
-			ShowInTaskbar = true;
 			_notifyIcon.Visible = false;
+			Show();
 			Activate();
+			WindowState = WindowState.Normal;
 		}
 
 		/// <summary>
-		/// Attend si jamais une autre instance de l'application se lance
+		/// Wait for another instance of the application
 		/// </summary>
 		/// <param name="iar"></param>
 		private void WaitForConnectionCallBack(IAsyncResult iar)
@@ -236,21 +326,19 @@ namespace FluxLike
 
 				Dispatcher.Invoke(() =>
 				{
-					int index = ListBoxConfigs.SelectedIndex;
-
-					if (index == -1)
+					if (SelectedConfigIndex == -1)
 					{
-						ListBoxConfigs.SelectedIndex = 0;
+						SelectedConfigIndex = 0;
 					}
 					else
 					{
-						if (ListBoxConfigs.SelectedIndex + 1 == ListBoxConfigs.Items.Count)
+						if (SelectedConfigIndex + 1 == Configs.Count)
 						{
-							ListBoxConfigs.SelectedIndex = 0;
+							SelectedConfigIndex = 0;
 						}
 						else
 						{
-							ListBoxConfigs.SelectedIndex++;
+							SelectedConfigIndex++;
 						}
 					}
 				});
@@ -267,187 +355,49 @@ namespace FluxLike
 			}
 		}
 
-		private void ButtonSaveClick(object sender, RoutedEventArgs e)
-		{
-			SaveCurrentScreen(InputFileName.Text == "" ? "config" : InputFileName.Text);
-		}
-
-		/// <summary>
-		/// Enregistre la configuration actuelle de l'écran dans le fichier qui aura le nom de configName
-		/// </summary>
-		/// <param name="configName">Nom du fichier</param>
-		private unsafe void SaveCurrentScreen(string configName)
-		{
-			short* gArray = stackalloc short[3 * 256];
-
-			_hdc = Graphics.FromHwnd(IntPtr.Zero).GetHdc().ToInt32();
-
-			bool retVal = GetDeviceGammaRamp(_hdc, gArray);//On récupère les données de l'écran
-
-			if (retVal)//Si ça a fonctionné
-			{
-				List<short> rgb = new List<short>();
-
-				for (int i = 0; i < 256 * 3; i++)
-				{
-					rgb.Add(gArray[i]);
-				}
-
-				Config conf = new Config(configName);
-				conf.RGB = rgb.ToArray();
-				conf.Order = Configs.Count;
-
-				Configs.Add(conf);
-			}
-			else
-			{
-				MessageBox.Show("Impossible de récupérer les données de l'écran. \r\nEssayez de redémarrer l'application.", "Erreur");
-			}
-		}
-
-		private unsafe void ApplyConfig(Config config)
-		{
-			short* gArray = stackalloc short[3 * 256];
-
-			for (int i = 0; i < 256 * 3; i++)
-			{
-				gArray[i] = config.RGB[i];
-			}
-
-			_hdc = Graphics.FromHwnd(IntPtr.Zero).GetHdc().ToInt32();
-
-			SetDeviceGammaRamp(_hdc, gArray);
-		}
-
-		private void ListBoxSelectedItemChanged(object sender, SelectionChangedEventArgs e)
-		{
-			if (e.AddedItems.Count > 0)
-			{
-				ApplyConfig(e.AddedItems[0] as Config);
-				ConfigKeyBinding.Text = (e.AddedItems[0] as Config).KeyBinding?.ToString();
-			}
-		}
-
 		private void MainForm_StateChanged(object sender, EventArgs e)
 		{
 			if (WindowState == WindowState.Minimized)
 			{
 				_notifyIcon.Visible = true;
-				ShowInTaskbar = false;
-			}
-		}
-
-		private void MoveUpConfig(object sender, RoutedEventArgs e)
-		{
-			if (ListBoxConfigs.SelectedItem == null)
-			{
-				return;
-			}
-
-			int index = ListBoxConfigs.SelectedIndex;
-			Config conf = ListBoxConfigs.SelectedItem as Config;
-
-			if (ListBoxConfigs.SelectedIndex > 0)
-			{
-				ListBoxConfigs.SelectionChanged -= ListBoxSelectedItemChanged;
-				Configs.RemoveAt(index);
-				Configs.Insert(index - 1, conf);
-				ListBoxConfigs.SelectedIndex = index - 1;
-				ListBoxConfigs.SelectionChanged += ListBoxSelectedItemChanged;
-			}
-
-			SetOrderToConfigs();
-		}
-
-		private void MoveDownConfig(object sender, RoutedEventArgs e)
-		{
-			if (ListBoxConfigs.SelectedItem == null)
-			{
-				return;
-			}
-
-			int index = ListBoxConfigs.SelectedIndex;
-			Config conf = ListBoxConfigs.SelectedItem as Config;
-
-			if (ListBoxConfigs.SelectedIndex < Configs.Count - 1)
-			{
-				ListBoxConfigs.SelectionChanged -= ListBoxSelectedItemChanged;
-				Configs.RemoveAt(index);
-				Configs.Insert(index + 1, conf);
-				ListBoxConfigs.SelectedIndex = index + 1;
-				ListBoxConfigs.SelectionChanged += ListBoxSelectedItemChanged;
-			}
-
-			SetOrderToConfigs();
-		}
-
-		private void DeleteConfig(object sender, RoutedEventArgs e)
-		{
-			Config conf = (Config)ListBoxConfigs.SelectedItem;
-
-			if (conf.KeyBinding != null)
-			{
-				UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(conf.KeyBinding.Key));
-			}
-
-			conf.Delete();
-			Configs.RemoveAt(ListBoxConfigs.SelectedIndex);
-		}
-
-		private void AssignKey(object sender, RoutedEventArgs e)
-		{
-			WaitingBindingGrid.Visibility = Visibility.Visible;
-		}
-
-		private void SetOrderToConfigs()
-		{
-			foreach (Config conf in Configs)
-			{
-				conf.Order = Configs.IndexOf(conf);
-				conf.Save();
+				Hide();
 			}
 		}
 
 		private void Window_OnKeyUp(object sender, KeyEventArgs keyEventArgs)
 		{
-			if (WaitingBindingGrid.Visibility == Visibility.Visible)
+			if (IsWaitingForKeyInput)
 			{
-				Config currentConfig = ((Config)ListBoxConfigs.SelectedItem);
-
-				
-
 				if (keyEventArgs.Key == Key.Escape)
 				{
 
 				}
 				else if (keyEventArgs.Key == Key.Back)
 				{
-					if (currentConfig.KeyBinding != null)
+					if (SelectedConfig.KeyBinding != null)
 					{
-						UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(currentConfig.KeyBinding.Key));
+						UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
 					}
 
-					currentConfig.KeyBinding = null;
-					currentConfig.Save();
-					ConfigKeyBinding.Text = "";
+					SelectedConfig.KeyBinding = null;
+					SelectedConfig.Save();
 				}
 				else
 				{
-					if (currentConfig.KeyBinding != null)
+					if (SelectedConfig.KeyBinding != null)
 					{
-						UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(currentConfig.KeyBinding.Key));
+						UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
 					}
 
-					currentConfig.KeyBinding = new KeyData(keyEventArgs.Key == Key.System ? keyEventArgs.SystemKey : keyEventArgs.Key, Keyboard.IsKeyDown(Key.LeftShift), Keyboard.IsKeyDown(Key.LeftAlt), Keyboard.IsKeyDown(Key.LeftCtrl));
-					currentConfig.Save();
-					ConfigKeyBinding.Text = currentConfig.KeyBinding?.ToString();
+					SelectedConfig.KeyBinding = new KeyData(keyEventArgs.Key == Key.System ? keyEventArgs.SystemKey : keyEventArgs.Key, Keyboard.IsKeyDown(Key.LeftShift), Keyboard.IsKeyDown(Key.LeftAlt), Keyboard.IsKeyDown(Key.LeftCtrl));
+					SelectedConfig.Save();
 
-					uint mask = currentConfig.KeyBinding.Alt ? (uint)0x0001 : 0;
-					mask = mask | (currentConfig.KeyBinding.Control ? (uint)0x0002 : 0);
-					mask = mask | (currentConfig.KeyBinding.Shift ? (uint)0x0004 : 0);
+					uint mask = SelectedConfig.KeyBinding.Alt ? (uint)0x0001 : 0;
+					mask = mask | (SelectedConfig.KeyBinding.Control ? (uint)0x0002 : 0);
+					mask = mask | (SelectedConfig.KeyBinding.Shift ? (uint)0x0004 : 0);
 					mask = mask | 0x4000;
 
-					int virtualKeyCode = KeyInterop.VirtualKeyFromKey(currentConfig.KeyBinding.Key);
+					int virtualKeyCode = KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key);
 
 					if (RegisterHotKey(_windowHandle, virtualKeyCode, mask, (uint)virtualKeyCode))
 					{
@@ -456,11 +406,11 @@ namespace FluxLike
 					}
 					else
 					{
-						MessageBox.Show("Cannot bind key " + currentConfig.KeyBinding);
+						MessageBox.Show("Cannot bind key " + SelectedConfig.KeyBinding);
 					}
 				}
 
-				WaitingBindingGrid.Visibility = Visibility.Collapsed;
+				IsWaitingForKeyInput = false;
 			}
 		}
 
@@ -491,6 +441,107 @@ namespace FluxLike
 				}
 			}
 		}
+
+
+		/// <summary>
+		/// Move the config down in the list
+		/// </summary>
+		/// <param name="obj"></param>
+		private void MoveConfigDown(object obj)
+		{
+			if (SelectedConfigIndex < Configs.Count - 1)
+			{
+				SelectedConfig.Order++;
+				Configs[SelectedConfigIndex + 1].Order--;
+				Configs.Move(SelectedConfigIndex, SelectedConfigIndex + 1);
+			}
+		}
+
+		/// <summary>
+		/// Move the config up in the list
+		/// </summary>
+		/// <param name="obj"></param>
+		private void MoveConfigUp(object obj)
+		{
+			if (SelectedConfigIndex > 0)
+			{
+				SelectedConfig.Order--;
+				Configs[SelectedConfigIndex - 1].Order++;
+				Configs.Move(SelectedConfigIndex, SelectedConfigIndex - 1);
+			}
+		}
+
+		/// <summary>
+		/// Save the current screen color
+		/// </summary>
+		/// <param name="obj"></param>
+		private unsafe void SaveConfig(object obj)
+		{
+			short* gArray = stackalloc short[3 * 256];
+
+			_hdc = Graphics.FromHwnd(IntPtr.Zero).GetHdc().ToInt32();
+
+			bool retVal = GetDeviceGammaRamp(_hdc, gArray);//On récupère les données de l'écran
+
+			if (retVal)//Si ça a fonctionné
+			{
+				List<short> rgb = new List<short>();
+
+				for (int i = 0; i < 256 * 3; i++)
+				{
+					rgb.Add(gArray[i]);
+				}
+
+				Config conf = new Config(TextNameConfig == "" ? "config" : TextNameConfig);
+				conf.RGB = rgb.ToArray();
+				conf.Order = Configs.Count;
+
+				Configs.Add(conf);
+
+				SelectedConfig = conf;
+			}
+			else
+			{
+				MessageBox.Show("Can't get screen data. \r\nTry again or restart application.", "Error");
+			}
+
+			TextNameConfig = "";
+		}
+
+		private void AssignKeyToConfig(object obj)
+		{
+			IsWaitingForKeyInput = true;
+		}
+
+		private unsafe void ApplyConfig(Config config)
+		{
+			short* gArray = stackalloc short[3 * 256];
+
+			for (int i = 0; i < 256 * 3; i++)
+			{
+				gArray[i] = config.RGB[i];
+			}
+
+			_hdc = Graphics.FromHwnd(IntPtr.Zero).GetHdc().ToInt32();
+
+			SetDeviceGammaRamp(_hdc, gArray);
+		}
+
+		
+
+		private void DeleteConfig(object obj)
+		{
+			if (SelectedConfig.KeyBinding != null)
+			{
+				UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
+			}
+
+			SelectedConfig.Delete();
+			Configs.RemoveAt(SelectedConfigIndex);
+			SelectedConfigIndex = 0;
+		}
+
+		
 
 		private unsafe void ApplyKelvin(int value)
 		{

@@ -84,6 +84,7 @@ namespace FluxLike.Classes
         #region Implémentation INotifyPropertyChanged
 
         //INotifyPropertyChanged implementation
+		[field:NonSerialized]
         public event PropertyChangedEventHandler PropertyChanged;
         private void NotifyPropertyChanged(String propertyName)
         {

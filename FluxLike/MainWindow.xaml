@@ -1,26 +1,33 @@
 ﻿<Window
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        x:Class="FluxLike.MainWindow"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="334" Width="294" StateChanged="MainForm_StateChanged" ShowInTaskbar="False" WindowState="Minimized" Visibility="Visible" ResizeMode="CanMinimize"
-		DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
-		KeyUp="Window_OnKeyUp"
-		Loaded="MainWindow_OnLoaded">
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:converters="clr-namespace:FluxLike.Converters"
+	x:Class="FluxLike.MainWindow"
+    mc:Ignorable="d"
+    Title="MainWindow" Height="334" Width="294" StateChanged="MainForm_StateChanged" ResizeMode="CanMinimize"
+	DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
+	KeyUp="Window_OnKeyUp"
+	Loaded="MainWindow_OnLoaded">
+
+	<Window.Resources>
+		<converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+		<converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+	</Window.Resources>
 	<Grid>
 		<StackPanel Margin="10">
 
 			<Slider Minimum="2000" Maximum="6600" Interval="10" Margin="0,5,0,0" Value="{Binding KelvinValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
 
 			<TextBlock Margin="0,0,0,5">
-				<Run Text="{Binding KelvinValue, UpdateSourceTrigger=PropertyChanged}"/>
+				<Run Text="{Binding KelvinValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 				<Run Text=" K"/>
 			</TextBlock>
 			
-			<TextBox x:Name="InputFileName" Height="25" TextWrapping="Wrap" VerticalContentAlignment="Center"/>
-			<Button Content="Save screen color" Margin="0,6,0,0" Width="210" Click="ButtonSaveClick"/>
+			<TextBox Height="25" TextWrapping="Wrap" VerticalContentAlignment="Center" Text="{Binding TextNameConfig, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+			<Button Content="Save screen color" Margin="0,6,0,0" Width="210" Command="{Binding SaveConfigCommand}"/>
+			
 			<Grid Margin="0,10,0,0">
 				<Grid.RowDefinitions>
 					<RowDefinition Height="214"/>
@@ -31,26 +38,29 @@
 					<ColumnDefinition Width="110"/>
 				</Grid.ColumnDefinitions>
 
-				<ListBox Grid.Column="0" x:Name="ListBoxConfigs" IsSynchronizedWithCurrentItem="True" SelectionChanged="ListBoxSelectedItemChanged"/>
+				<ListBox Grid.Column="0" IsSynchronizedWithCurrentItem="True" 
+						 ItemsSource="{Binding Configs, UpdateSourceTrigger=PropertyChanged}" 
+						 SelectedIndex="{Binding SelectedConfigIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+						 SelectedItem="{Binding SelectedConfig, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-				<StackPanel Grid.Column="2" Margin="0,0,12,0">
-					<Button Click="MoveUpConfig">
+				<StackPanel Grid.Column="2" Margin="0,0,12,0" Visibility="{Binding SelectedConfig, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource NullToVisibilityConverter}}">
+					<Button Command="{Binding MoveConfigUpCommand}">
 						<Image Height="11" Width="57" Source="Resources/arrow_up.png"/>
 					</Button>
-				
-					<Button Margin="0,5,0,0" Click="MoveDownConfig">
+
+					<Button Margin="0,5,0,0" Command="{Binding MoveConfigDownCommand}">
 						<Image Height="11" Width="57" Source="Resources/arrow_down.png"/>
 					</Button>
-				
-					<Button Content="Assign Key" Margin="0,5,0,0" Click="AssignKey"/>
-					
-					<TextBlock x:Name="ConfigKeyBinding" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
-				
-					<Button Content="Delete" Margin="0,5,0,0" Click="DeleteConfig"/>
+
+					<Button Content="Assign Key" Margin="0,5,0,0" Command="{Binding AssignKeyToConfigCommand}"/>
+
+					<TextBlock Text="{Binding SelectedConfig.KeyBinding, UpdateSourceTrigger=PropertyChanged}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
+
+					<Button Content="Delete" Margin="0,5,0,0" Command="{Binding DeleteConfigCommand}"/>
 				</StackPanel>
 			</Grid>
 		</StackPanel>
-		<Grid x:Name="WaitingBindingGrid" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Background="White" Visibility="Collapsed">
+		<Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Background="White" Visibility="{Binding IsWaitingForKeyInput, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BoolToVisibilityConverter}}">
 			<StackPanel VerticalAlignment="Center">
 				<TextBlock Text="Press a key" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 				<TextBlock Text="ESC to cancel" HorizontalAlignment="Center" VerticalAlignment="Center"/>
