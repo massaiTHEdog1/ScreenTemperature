@@ -262,8 +262,6 @@ namespace FluxLike
 				SelectedConfig = Configs[0];
 			}
 
-			WindowState = WindowState.Minimized;
-			Hide();
 
 			InitializeComponent();
 		}
@@ -444,6 +442,8 @@ namespace FluxLike
 					}
 				}
 			}
+
+			WindowState = WindowState.Minimized;
 		}
 
 
