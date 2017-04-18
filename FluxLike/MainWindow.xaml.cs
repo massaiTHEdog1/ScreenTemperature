@@ -263,6 +263,7 @@ namespace FluxLike
 			}
 
 			WindowState = WindowState.Minimized;
+			Hide();
 
 			InitializeComponent();
 		}
