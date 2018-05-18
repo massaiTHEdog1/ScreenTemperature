@@ -3,19 +3,21 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace FluxLike.Converters
+namespace ScreenTemperature.Converters
 {
-	public class NullToVisibilityConverter : IValueConverter
+	public class BoolToVisibilityConverter : IValueConverter
 	{
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			if (value == null)
+			bool v = (bool)value;
+
+			if(v == true)
 			{
-				return parameter == null ? Visibility.Collapsed : Visibility.Hidden;
+				return Visibility.Visible;
 			}
 			else
 			{
-				return Visibility.Visible;
+				return parameter == null ? Visibility.Collapsed : Visibility.Hidden;
 			}
 		}
 

@@ -17,13 +17,13 @@ using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Interop;
-using FluxLike.Classes;
+using ScreenTemperature.Classes;
 using Microsoft.Win32;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MessageBox = System.Windows.MessageBox;
 using TimeoutException = System.TimeoutException;
 
-namespace FluxLike
+namespace ScreenTemperature
 {
 	/// <summary>
 	/// Logique d'interaction pour MainWindow.xaml
@@ -186,8 +186,7 @@ namespace FluxLike
 
 		public MainWindow()
 		{
-			executableDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
-			configDirectory = executableDirectory + @"\Configs";
+			configDirectory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\ScreenTemperature\Configs";
 
 			bool exists = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location)).Length > 1;
 
@@ -644,12 +643,13 @@ namespace FluxLike
 			SetDeviceGammaRamp(_hdc, gArray);
 		}
 
-		#endregion
 
-		#region Implémentation INotifyPropertyChanged
+        #endregion
 
-		//INotifyPropertyChanged implementation
-		public event PropertyChangedEventHandler PropertyChanged;
+        #region Implémentation INotifyPropertyChanged
+
+        //INotifyPropertyChanged implementation
+        public event PropertyChangedEventHandler PropertyChanged;
 		private void NotifyPropertyChanged(String propertyName)
 		{
 			if (PropertyChanged != null)

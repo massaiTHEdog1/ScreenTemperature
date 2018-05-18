@@ -6,7 +6,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Windows.Forms;
 using MessageBox = System.Windows.MessageBox;
 
-namespace FluxLike.Classes
+namespace ScreenTemperature.Classes
 {
 	[Serializable]
     public class Config : INotifyPropertyChanged

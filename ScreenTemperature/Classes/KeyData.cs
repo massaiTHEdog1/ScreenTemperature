@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Windows.Input;
 
-namespace FluxLike.Classes
+namespace ScreenTemperature.Classes
 {
 	[Serializable]
 	public class KeyData : INotifyPropertyChanged
