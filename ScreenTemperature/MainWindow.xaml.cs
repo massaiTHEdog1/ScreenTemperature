@@ -31,9 +31,11 @@ namespace ScreenTemperature
 	public partial class MainWindow : INotifyPropertyChanged
 	{
 
-		#region Variables
+        #region Variables
 
-		private static Int32 _hdc;//Hardware Device Context
+        private const string _runKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+
+        private static Int32 _hdc;//Hardware Device Context
 		public static string executableDirectory;
 		public static string configDirectory;
 		private NamedPipeServerStream _pipeServer;
@@ -46,8 +48,9 @@ namespace ScreenTemperature
 		private Config _selectedConfig;
 		private string _textNameConfig;
 		private bool _isWaitingForKeyInput;
+	    private bool _isCheckedStartAtSystemStartup;
 
-		public ICommand AssignKeyToConfigCommand { get; private set; }
+	    public ICommand AssignKeyToConfigCommand { get; private set; }
 		public ICommand SaveConfigCommand { get; private set; }
 		public ICommand DeleteConfigCommand { get; private set; }
 		public ICommand MoveConfigUpCommand { get; private set; }
@@ -150,19 +153,67 @@ namespace ScreenTemperature
 			}
 		}
 
-		#endregion
+        /// <summary>
+        /// Start the software at system startup?
+        /// </summary>
+	    public bool IsCheckedStartAtSystemStartup
+	    {
+            get { return _isCheckedStartAtSystemStartup; }
+            set
+            {
+                _isCheckedStartAtSystemStartup = value;
 
-		#region Methods
+                if (value)
+                {
+                    RegistryKey key = Registry.CurrentUser.OpenSubKey(_runKeyPath, true);
 
-		#region DLLs
+                    if (key != null)
+                    {
+                        string applicationPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
 
-		/// <summary>
-		/// Définit les couleurs
-		/// </summary>
-		/// <param name="hdc">Hardware Device Context (l'écran)</param>
-		/// <param name="ramp"></param>
-		/// <returns></returns>
-		[DllImport("GDI32.dll")]
+                        string applicationName = Process.GetCurrentProcess().ProcessName;
+
+                        key.SetValue(applicationName, applicationPath);
+
+                        key.Close();
+                    }
+                }
+                else
+                {
+                    RegistryKey key = Registry.CurrentUser.OpenSubKey(_runKeyPath, true);
+
+                    if (key != null)
+                    {
+                        string applicationName = Process.GetCurrentProcess().ProcessName;
+
+                        object subKey = key.GetValue(applicationName);
+
+                        if (subKey != null)
+                        {
+                            key.DeleteValue(applicationName);
+                        }
+
+                        key.Close();
+                    }
+                }
+
+                NotifyPropertyChanged("IsCheckedStartAtSystemStartup");
+            }
+        }
+
+        #endregion
+
+        #region Methods
+
+        #region DLLs
+
+        /// <summary>
+        /// Définit les couleurs
+        /// </summary>
+        /// <param name="hdc">Hardware Device Context (l'écran)</param>
+        /// <param name="ramp"></param>
+        /// <returns></returns>
+        [DllImport("GDI32.dll")]
 		private static extern unsafe bool SetDeviceGammaRamp(Int32 hdc, void* ramp);
 
 		/// <summary>
@@ -225,44 +276,58 @@ namespace ScreenTemperature
 			_notifyIcon.Click += NotifyIconOnClick;
 			_notifyIcon.Visible = true;
 
-			try
-			{
-				Directory.CreateDirectory(configDirectory);
-			}
-			catch (Exception e)
-			{
-				MessageBox.Show($"Can't create config directory.\r\nTry restarting application.\r\nErrorr:\r\n{e.Message}", "Error");
-				Environment.Exit(0);
-			}
+            try
+            {
+                Directory.CreateDirectory(configDirectory);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show($"Can't create config directory.\r\nTry restarting application.\r\nErrorr:\r\n{e.Message}", "Error");
+                Environment.Exit(0);
+            }
 
-			Configs = new ObservableCollection<Config>();
+            Configs = new ObservableCollection<Config>();
 
-			foreach (string file in Directory.GetFiles(configDirectory, "*.bin"))
-			{
-				try
-				{
-					IFormatter formatter = new BinaryFormatter();
+            foreach (string file in Directory.GetFiles(configDirectory, "*.bin"))
+            {
+                try
+                {
+                    IFormatter formatter = new BinaryFormatter();
 
-					using (Stream stream = new FileStream($@"{file}", FileMode.Open, FileAccess.Read, FileShare.Read))
-					{
-						Configs.Add(formatter.Deserialize(stream) as Config);
-					}
-				}
-				catch (Exception e)
-				{
-					MessageBox.Show($"File {file} corrupt.\r\nCan't use this config.\r\nError:\r\n{e.Message}", "Error");
-				}
-			}
+                    using (Stream stream = new FileStream($@"{file}", FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        Configs.Add(formatter.Deserialize(stream) as Config);
+                    }
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show($"File {file} corrupt.\r\nCan't use this config.\r\nError:\r\n{e.Message}", "Error");
+                }
+            }
 
-			Configs = new ObservableCollection<Config>(Configs.OrderBy(conf => conf.Order).ToList());
+            Configs = new ObservableCollection<Config>(Configs.OrderBy(conf => conf.Order).ToList());
 
-			if (Configs.Count > 0)
-			{
-				SelectedConfig = Configs[0];
-			}
+            if (Configs.Count > 0)
+            {
+                SelectedConfig = Configs[0];
+            }
 
 
-			InitializeComponent();
+
+            RegistryKey key = Registry.CurrentUser.OpenSubKey(_runKeyPath, true);
+
+            if (key != null)
+            {
+                string applicationName = Process.GetCurrentProcess().ProcessName;
+
+                object subKey = key.GetValue(applicationName);
+
+                IsCheckedStartAtSystemStartup = subKey != null;
+
+                key.Close();
+            }
+
+            InitializeComponent();
 		}
 
 		#endregion
