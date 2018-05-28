@@ -6,7 +6,7 @@
 	xmlns:converters="clr-namespace:ScreenTemperature.Converters"
 	x:Class="ScreenTemperature.MainWindow"
     mc:Ignorable="d"
-    Title="MainWindow" Height="334" Width="294" StateChanged="MainForm_StateChanged" ResizeMode="CanMinimize"
+    Title="ScreenTemperature" Height="334" Width="294" StateChanged="MainForm_StateChanged" ResizeMode="CanMinimize"
 	DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
 	KeyUp="Window_OnKeyUp"
 	Loaded="MainWindow_OnLoaded">
