@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
 
 namespace ScreenTemperature.Classes
@@ -12,9 +7,8 @@ namespace ScreenTemperature.Classes
 	{
 		private Action<object> execute;
 		private Func<object, bool> canExecute;
-		private Action<object, RoutedEventArgs> deleteConfig;
 
-		public event EventHandler CanExecuteChanged
+	    public event EventHandler CanExecuteChanged
 		{
 			add { CommandManager.RequerySuggested += value; }
 			remove { CommandManager.RequerySuggested -= value; }
@@ -26,19 +20,14 @@ namespace ScreenTemperature.Classes
 			this.canExecute = canExecute;
 		}
 
-		public RelayCommand(Action<object, RoutedEventArgs> deleteConfig)
-		{
-			this.deleteConfig = deleteConfig;
-		}
-
 		public bool CanExecute(object parameter)
 		{
-			return this.canExecute == null || this.canExecute(parameter);
+			return canExecute == null || canExecute(parameter);
 		}
 
 		public void Execute(object parameter)
 		{
-			this.execute(parameter);
+			execute(parameter);
 		}
 	}
 }
