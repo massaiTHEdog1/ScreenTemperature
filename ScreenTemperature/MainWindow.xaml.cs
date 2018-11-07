@@ -37,9 +37,11 @@ namespace ScreenTemperature
 		private IntPtr _windowHandle;
 		private int _kelvinValue = 6600;
 		private ObservableCollection<Config> _configs;
-		private int _selectedConfigIndex;
+        private ObservableCollection<Monitor> _monitors;
+        private int _selectedConfigIndex;
 		private Config _selectedConfig;
-		private string _textNameConfig;
+        private Monitor _selectedMonitor;
+        private string _textNameConfig;
 		private bool _isWaitingForKeyInput;
 	    private bool _isCheckedStartAtSystemStartup;
 
@@ -53,8 +55,10 @@ namespace ScreenTemperature
 
 	    private readonly IConfigService _configService;
 	    private readonly IScreenColorService _temperatureService;
+	    // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+	    private readonly IMonitorService _monitorService;
 
-        #endregion
+	    #endregion
 
 
         #endregion
@@ -72,7 +76,7 @@ namespace ScreenTemperature
 				_kelvinValue = value;
 				NotifyPropertyChanged("KelvinValue");
 
-				_temperatureService.ChangeScreenColorFromKelvin(value);
+				_temperatureService.ChangeScreenColorFromKelvin(value, SelectedMonitor);
 			}
 		}
 
@@ -92,10 +96,10 @@ namespace ScreenTemperature
 			}
 		}
 
-		/// <summary>
-		/// Index of the selected config
-		/// </summary>
-		public int SelectedConfigIndex
+        /// <summary>
+        /// Index of the selected config
+        /// </summary>
+        public int SelectedConfigIndex
 		{
 			get { return _selectedConfigIndex; }
 			set
@@ -128,10 +132,39 @@ namespace ScreenTemperature
 			}
 		}
 
-		/// <summary>
-		/// Value of textbox for the name of the config
+        /// <summary>
+		/// List of available monitors
 		/// </summary>
-		public string TextNameConfig
+		public ObservableCollection<Monitor> Monitors
+        {
+            get
+            {
+                return _monitors;
+            }
+            set
+            {
+                _monitors = value;
+                NotifyPropertyChanged("Monitors");
+            }
+        }
+
+        /// <summary>
+		/// The selected monitor
+		/// </summary>
+		public Monitor SelectedMonitor
+        {
+            get { return _selectedMonitor; }
+            set
+            {
+                _selectedMonitor = value;
+                NotifyPropertyChanged("SelectedMonitor");
+            }
+        }
+
+        /// <summary>
+        /// Value of textbox for the name of the config
+        /// </summary>
+        public string TextNameConfig
 		{
 			get { return _textNameConfig; }
 			set
@@ -204,8 +237,6 @@ namespace ScreenTemperature
 
         #endregion
 
-        #region Methods
-
         #region DLLs
 
 		[DllImport("User32.dll")]
@@ -223,10 +254,15 @@ namespace ScreenTemperature
 		    var container = new Container();
 		    container.Register<IConfigService, ConfigService>();
 		    container.Register<IScreenColorService, ScreenColorService>();
+            container.Register<IMonitorService, MonitorService>();
             container.Verify();
 
 		    _configService = container.GetInstance<IConfigService>();
 		    _temperatureService = container.GetInstance<IScreenColorService>();
+            _monitorService = container.GetInstance<IMonitorService>();
+
+            Monitors = new ObservableCollection<Monitor>(_monitorService.GetMonitors());
+		    SelectedMonitor = Monitors.FirstOrDefault();
 
             bool exists = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location)).Length > 1;
 
@@ -497,6 +533,8 @@ namespace ScreenTemperature
 	    }
 
         #endregion
+
+        #region Methods
 
         /// <summary>
         /// Move the config down in the list

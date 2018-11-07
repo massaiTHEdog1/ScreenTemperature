@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace ScreenTemperature.Classes
@@ -9,10 +10,10 @@ namespace ScreenTemperature.Classes
         #region Variables
 
         private string _configName;
-        private short[] _rgb;
         private int _order;
         private string _configPath;
 	    private KeyData _keyBinding;
+        private List<Monitor> _monitors;
 
 	    #endregion;
 
@@ -25,16 +26,6 @@ namespace ScreenTemperature.Classes
             {
                 _configName = value;
                 NotifyPropertyChanged("Libelle");
-            }
-        }
-
-        public short[] Rgb
-        {
-            get { return _rgb; }
-            set
-            {
-                _rgb = value;
-                NotifyPropertyChanged("RGB");
             }
         }
 
@@ -68,6 +59,16 @@ namespace ScreenTemperature.Classes
 		    }
 	    }
 
+        public List<Monitor> Monitors
+        {
+            get { return _monitors; }
+            set
+            {
+                _monitors = value;
+                NotifyPropertyChanged("Monitor");
+            }
+        }
+
         #endregion
 
         #region Méthodes
@@ -75,7 +76,7 @@ namespace ScreenTemperature.Classes
         #region Implémentation INotifyPropertyChanged
 
         //INotifyPropertyChanged implementation
-		[field:NonSerialized]
+        [field:NonSerialized]
         public event PropertyChangedEventHandler PropertyChanged;
         private void NotifyPropertyChanged(String propertyName)
         {

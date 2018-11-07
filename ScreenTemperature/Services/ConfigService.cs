@@ -64,7 +64,7 @@ namespace ScreenTemperature.Services
         {
             if (_listConfigs == null)
             {
-                List<Config> configs = new List<Config>();
+                _listConfigs = new List<Config>();
 
                 foreach (string file in Directory.GetFiles(_configDirectory, "*.bin"))
                 {
@@ -75,7 +75,7 @@ namespace ScreenTemperature.Services
                         using (Stream stream =
                             new FileStream($@"{file}", FileMode.Open, FileAccess.Read, FileShare.Read))
                         {
-                            configs.Add((Config) formatter.Deserialize(stream));
+                            _listConfigs.Add((Config) formatter.Deserialize(stream));
                         }
                     }
                     catch (Exception e)
@@ -84,15 +84,9 @@ namespace ScreenTemperature.Services
                             "Error");
                     }
                 }
-
-                _listConfigs = configs;
-
-                return configs;
             }
-            else
-            {
-                return _listConfigs;
-            }
+
+            return _listConfigs;
         }
 
         /// <summary>

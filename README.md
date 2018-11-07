@@ -5,5 +5,6 @@ What's different with f.lux?
 -Create and save multiple configurations  
 -Key bindings!  
 -Simple interface  
+-Multi-screen support and possibility to change each screen individually  
   
-![Alt text](http://i.imgur.com/bYgf7GE.png)
+![Alt text](https://i.imgur.com/7Mk3t70.png)

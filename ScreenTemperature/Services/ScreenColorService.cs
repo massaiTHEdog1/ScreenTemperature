@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -13,36 +12,20 @@ namespace ScreenTemperature.Services
     {
         #region Variables
 
-        private Graphics _graphics;
-        private IntPtr _hdc;
+
 
         #endregion
 
         #region Properties
 
-        private IntPtr Hdc
-        {
-            get
-            {
-                if (_hdc == IntPtr.Zero)
-                {
-                    _graphics = Graphics.FromHwnd(IntPtr.Zero);
-                    _hdc = _graphics.GetHdc();
 
-                    return _hdc;
-                }
-                else
-                {
-                    return _hdc;
-                }
-            }
-        }
 
         #endregion
 
         #region Services
 
-        private IConfigService _configService;
+        private readonly IConfigService _configService;
+        private readonly IMonitorService _monitorService;
 
         #endregion
 
@@ -58,18 +41,10 @@ namespace ScreenTemperature.Services
 
         #region Constructor
 
-        public ScreenColorService(IConfigService configService)
+        public ScreenColorService(IConfigService configService, IMonitorService monitorService)
         {
             _configService = configService;
-        }
-
-        ~ScreenColorService()
-        {
-            if (_graphics != null)
-            {
-                //_graphics.ReleaseHdc(_hdc);
-                _graphics.Dispose();
-            }
+            _monitorService = monitorService;
         }
 
         #endregion
@@ -79,7 +54,7 @@ namespace ScreenTemperature.Services
         /// <summary>
         /// Changes screen color from kelvin value
         /// </summary>
-        public unsafe void ChangeScreenColorFromKelvin(int value)
+        public unsafe void ChangeScreenColorFromKelvin(int value, Monitor monitor)
         {
             float kelvin = value;
             float temperature = kelvin / 100;
@@ -157,7 +132,7 @@ namespace ScreenTemperature.Services
                 gArray[512 + ik] = (short)(ik * blue);
             }
 
-            SetDeviceGammaRamp(Hdc.ToInt32(), gArray);
+            SetDeviceGammaRamp(monitor.Hdc.ToInt32(), gArray);
         }
 
         /// <summary>
@@ -167,68 +142,80 @@ namespace ScreenTemperature.Services
         {
             short* gArray = stackalloc short[3 * 256];
 
-            ChangeScreenColorFromKelvin(6600);
-
-            for (int i = 0; i < 256 * 3; i++)
+            foreach (Monitor monitor in _monitorService.GetMonitors())
             {
-                gArray[i] = config.Rgb[i];
+                ChangeScreenColorFromKelvin(6600, monitor);
             }
 
-            SetDeviceGammaRamp(Hdc.ToInt32(), gArray);
+            foreach(Monitor monitor in config.Monitors)
+            {
+                for (int i = 0; i < 256 * 3; i++)
+                {
+                    gArray[i] = monitor.Rgb[i];
+                }
+
+                SetDeviceGammaRamp(_monitorService.GetHdcByMonitorName(monitor.Name).ToInt32(), gArray);
+            }
         }
 
         public unsafe Config SaveCurrentScreenColorToConfig(string configName)
         {
-            short* gArray = stackalloc short[3 * 256];
+            List<Config> configs = _configService.GetConfigs();
+            Config configToModify = configs.FirstOrDefault(x => x.ConfigName == configName);
 
-            bool retVal = GetDeviceGammaRamp(Hdc.ToInt32(), gArray);//Get screen data
-
-            if (retVal)//If it' ok
+            if (configToModify == null) //If the config doesn't exist
             {
-                List<short> rgb = new List<short>();
-
-                for (int i = 0; i < 256 * 3; i++)
+                configToModify = new Config()
                 {
-                    rgb.Add(gArray[i]);
-                }
-
-                List<Config> configs = _configService.GetConfigs();
-
-                Config configToModify = configs.FirstOrDefault(x => x.ConfigName == configName);
-
-                if (configToModify == null)//If the config doesn't exist
-                {
-                    configToModify = new Config()
-                    {
-                        ConfigName = configName == "" ? "config" : configName,
-                        Rgb = rgb.ToArray(),
-                        Order = configs.Count
-                    };
-
-                    _configService.SaveConfig(configToModify);
-                }
-                else//If the config already exists
-                {
-                    if (MessageBox.Show($"Are you sure you want to erase this config: {configName}?", "", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
-                    {
-                        configToModify.Rgb = rgb.ToArray();
-
-                        _configService.SaveConfig(configToModify);
-                    }
-                    else
-                    {
-                        return configToModify;//Maybe we just want to change the name so we souldn't change current screen color
-                    }
-                }
-
-                return configToModify;
+                    ConfigName = configName == "" ? "config" : configName,
+                    Monitors = new List<Monitor>(),
+                    Order = configs.Count
+                };
             }
-            else
+            else //If the config already exists
             {
-                MessageBox.Show("Can't get screen data. \r\nTry again or restart application.", "Error");
-
-                return null;
+                if (MessageBox.Show($"Are you sure you want to erase this config: {configName}?", "", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                {
+                    configToModify.Monitors = new List<Monitor>();
+                }
+                else
+                {
+                    return null;
+                }
             }
+
+            List<Monitor> monitors = _monitorService.GetMonitorsExceptAllMonitorsInOne();
+
+            foreach (Monitor monitor in monitors)
+            {
+                short* gArray = stackalloc short[3 * 256];
+
+                bool retVal = GetDeviceGammaRamp(monitor.Hdc.ToInt32(), gArray); //Get screen data
+
+                if (retVal) //If it' ok
+                {
+                    List<short> rgb = new List<short>();
+
+                    for (int i = 0; i < 256 * 3; i++)
+                    {
+                        rgb.Add(gArray[i]);
+                    }
+
+                    configToModify.Monitors.Add(new Monitor()
+                    {
+                        Name = monitor.Name,
+                        Rgb = rgb.ToArray()
+                    });
+                }
+                else
+                {
+                    MessageBox.Show("Can't get screen data. \r\nTry again or restart application.", "Error");
+
+                    return null;
+                }
+            }
+
+            return _configService.SaveConfig(configToModify);
         }
 
         #endregion

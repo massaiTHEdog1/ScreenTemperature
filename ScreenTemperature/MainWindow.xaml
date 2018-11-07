@@ -6,7 +6,7 @@
 	xmlns:converters="clr-namespace:ScreenTemperature.Converters"
 	x:Class="ScreenTemperature.MainWindow"
     mc:Ignorable="d"
-    Title="ScreenTemperature" Height="334" Width="294" StateChanged="MainForm_StateChanged" ResizeMode="CanMinimize"
+    Title="ScreenTemperature" Height="364" Width="294" StateChanged="MainForm_StateChanged" ResizeMode="CanMinimize"
 	DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
 	KeyUp="Window_OnKeyUp"
 	Loaded="MainWindow_OnLoaded">
@@ -16,49 +16,63 @@
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
     </Window.Resources>
     <Grid>
-        <DockPanel Margin="10">
-            <TextBlock DockPanel.Dock="Top" Margin="0,5,0,5">
+        <Grid Margin="10,10,10,5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            
+
+            <TextBlock Grid.Row="0" Margin="0,0,0,5">Screen</TextBlock>
+
+            <ComboBox Grid.Row="1" Width="100" HorizontalAlignment="Left" ItemsSource="{Binding Monitors}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"/>
+
+            <TextBlock Grid.Row="2" Margin="0,5,0,5">
                 <Run Text="Temperature: "/>
-                <Run Text="{Binding KelvinValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <Run Text="{Binding KelvinValue, Mode=TwoWay}"/>
                 <Run Text=" K"/>
             </TextBlock>
 
-            <Slider DockPanel.Dock="Top" Minimum="2000" Maximum="6600" Interval="10" Margin="0,0,0,5" Value="{Binding KelvinValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+            <Slider Grid.Row="3" Minimum="2000" Maximum="6600" Interval="10" Value="{Binding KelvinValue, Mode=TwoWay}"/>
 
-            <Grid DockPanel.Dock="Top">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="20"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="100"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <TextBox Grid.Column="0" TextWrapping="Wrap" VerticalContentAlignment="Center" Text="{Binding TextNameConfig, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                <Button Grid.Column="1" Content="Save current screen color" Command="{Binding SaveConfigCommand}"/>
-            </Grid>
-
-            
-
-            <GroupBox DockPanel.Dock="Top" Margin="0,5,0,0" Header="Configs">
+            <GroupBox Grid.Row="4" Header="Configurations">
                 <Grid Margin="0,5,0,0">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
-                        <RowDefinition Height="10"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="150"/>
-                        <ColumnDefinition Width="10"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <ListBox Grid.Row="0" Grid.Column="0" IsSynchronizedWithCurrentItem="True" 
-						     ItemsSource="{Binding Configs, UpdateSourceTrigger=PropertyChanged}" 
-						     SelectedIndex="{Binding SelectedConfigIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-						     SelectedItem="{Binding SelectedConfig, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Grid Grid.Row="0" Grid.ColumnSpan="3">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="20"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Row="0" Grid.Column="2" Visibility="{Binding SelectedConfig, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource NullToVisibilityConverter}}">
+                        <TextBox Grid.Column="0" TextWrapping="NoWrap" VerticalContentAlignment="Center" Text="{Binding TextNameConfig, Mode=TwoWay}"/>
+                        <Button Grid.Column="1" Content="Save current screen color" Command="{Binding SaveConfigCommand}"/>
+                    </Grid>
+
+                    <Separator Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,5"/>
+
+                    <ListBox Grid.Row="2" Grid.Column="0" IsSynchronizedWithCurrentItem="True" 
+						     ItemsSource="{Binding Configs}" 
+						     SelectedIndex="{Binding SelectedConfigIndex, Mode=TwoWay}" 
+						     SelectedItem="{Binding SelectedConfig, Mode=TwoWay}"/>
+
+                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="5,0,0,0" Visibility="{Binding SelectedConfig, Converter={StaticResource NullToVisibilityConverter}}">
                         <Button Command="{Binding MoveConfigUpCommand}">
                             <Image Height="11" Width="57" Source="Resources/arrow_up.png"/>
                         </Button>
@@ -69,19 +83,21 @@
 
                         <Button Content="Assign Key" Margin="0,5,0,0" Command="{Binding AssignKeyToConfigCommand}"/>
 
-                        <TextBlock Text="{Binding SelectedConfig.KeyBinding, UpdateSourceTrigger=PropertyChanged}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                        <TextBlock Text="{Binding SelectedConfig.KeyBinding}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
 
                         <Button Content="Delete" Margin="0,5,0,0" Command="{Binding DeleteConfigCommand}"/>
                     </StackPanel>
                     
-                   <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
+                   <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,0">
                        <CheckBox Margin="0,0,5,0" IsChecked="{Binding IsCheckedStartAtSystemStartup}"/>
                        <TextBlock Text="Start application on system startup"/>
                     </StackPanel>
                 </Grid>
             </GroupBox>
-        </DockPanel>
-        <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Background="White" Visibility="{Binding IsWaitingForKeyInput, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BoolToVisibilityConverter}}">
+
+            <TextBlock Grid.Row="5" HorizontalAlignment="Right">Version 1</TextBlock>
+        </Grid>
+        <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Background="White" Visibility="{Binding IsWaitingForKeyInput, Converter={StaticResource BoolToVisibilityConverter}}">
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Text="Press a key" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <TextBlock Text="ESC to cancel" HorizontalAlignment="Center" VerticalAlignment="Center"/>

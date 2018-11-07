@@ -7,7 +7,7 @@ namespace ScreenTemperature.Services.Interfaces
         /// <summary>
         /// Changes screen color from kelvin value
         /// </summary>
-        void ChangeScreenColorFromKelvin(int kelvin);
+        void ChangeScreenColorFromKelvin(int kelvin, Monitor monitor);
 
         /// <summary>
         /// Changes screen color from a Config
