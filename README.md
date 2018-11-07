@@ -7,4 +7,4 @@ What's different with f.lux?
 -Simple interface  
 -Multi-screen support and possibility to change each screen individually  
   
-![Alt text](https://i.imgur.com/7Mk3t70.png)
+![Alt text](https://i.imgur.com/fuTS1Fc.jpg)
