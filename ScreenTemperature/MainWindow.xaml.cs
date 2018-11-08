@@ -27,48 +27,48 @@ namespace ScreenTemperature
 	/// </summary>
 	public partial class MainWindow : INotifyPropertyChanged
 	{
-        #region Variables
+		#region Variables
 
-	    private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+		private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
 		private NamedPipeServerStream _pipeServer;
 		private readonly NotifyIcon _notifyIcon = new NotifyIcon();
-		
+
 		private IntPtr _windowHandle;
 		private int _kelvinValue = 6600;
 		private ObservableCollection<Config> _configs;
-        private ObservableCollection<Monitor> _monitors;
-        private int _selectedConfigIndex;
+		private ObservableCollection<Monitor> _monitors;
+		private int _selectedConfigIndex;
 		private Config _selectedConfig;
-        private Monitor _selectedMonitor;
-        private string _textNameConfig;
+		private Monitor _selectedMonitor;
+		private string _textNameConfig;
 		private bool _isWaitingForKeyInput;
-	    private bool _isCheckedStartAtSystemStartup;
+		private bool _isCheckedStartAtSystemStartup;
 
-	    public ICommand AssignKeyToConfigCommand { get; private set; }
+		public ICommand AssignKeyToConfigCommand { get; private set; }
 		public ICommand SaveConfigCommand { get; private set; }
 		public ICommand DeleteConfigCommand { get; private set; }
 		public ICommand MoveConfigUpCommand { get; private set; }
 		public ICommand MoveConfigDownCommand { get; private set; }
 
-        #region Services
+		#region Services
 
-	    private readonly IConfigService _configService;
-	    private readonly IScreenColorService _temperatureService;
-	    // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-	    private readonly IMonitorService _monitorService;
+		private readonly IConfigService _configService;
+		private readonly IScreenColorService _temperatureService;
+		// ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+		private readonly IMonitorService _monitorService;
 
-	    #endregion
+		#endregion
 
 
-        #endregion
+		#endregion
 
-        #region Properties
+		#region Properties
 
-        /// <summary>
-        /// Kelvin slider's value
-        /// </summary>
-        public int KelvinValue
+		/// <summary>
+		/// Kelvin slider's value
+		/// </summary>
+		public int KelvinValue
 		{
 			get { return _kelvinValue; }
 			set
@@ -96,10 +96,10 @@ namespace ScreenTemperature
 			}
 		}
 
-        /// <summary>
-        /// Index of the selected config
-        /// </summary>
-        public int SelectedConfigIndex
+		/// <summary>
+		/// Index of the selected config
+		/// </summary>
+		public int SelectedConfigIndex
 		{
 			get { return _selectedConfigIndex; }
 			set
@@ -132,39 +132,39 @@ namespace ScreenTemperature
 			}
 		}
 
-        /// <summary>
+		/// <summary>
 		/// List of available monitors
 		/// </summary>
 		public ObservableCollection<Monitor> Monitors
-        {
-            get
-            {
-                return _monitors;
-            }
-            set
-            {
-                _monitors = value;
-                NotifyPropertyChanged("Monitors");
-            }
-        }
+		{
+			get
+			{
+				return _monitors;
+			}
+			set
+			{
+				_monitors = value;
+				NotifyPropertyChanged("Monitors");
+			}
+		}
 
-        /// <summary>
+		/// <summary>
 		/// The selected monitor
 		/// </summary>
 		public Monitor SelectedMonitor
-        {
-            get { return _selectedMonitor; }
-            set
-            {
-                _selectedMonitor = value;
-                NotifyPropertyChanged("SelectedMonitor");
-            }
-        }
+		{
+			get { return _selectedMonitor; }
+			set
+			{
+				_selectedMonitor = value;
+				NotifyPropertyChanged("SelectedMonitor");
+			}
+		}
 
-        /// <summary>
-        /// Value of textbox for the name of the config
-        /// </summary>
-        public string TextNameConfig
+		/// <summary>
+		/// Value of textbox for the name of the config
+		/// </summary>
+		public string TextNameConfig
 		{
 			get { return _textNameConfig; }
 			set
@@ -187,57 +187,57 @@ namespace ScreenTemperature
 			}
 		}
 
-        /// <summary>
-        /// Start the software at system startup?
-        /// </summary>
-	    public bool IsCheckedStartAtSystemStartup
-	    {
-            get { return _isCheckedStartAtSystemStartup; }
-            set
-            {
-                _isCheckedStartAtSystemStartup = value;
+		/// <summary>
+		/// Start the software at system startup?
+		/// </summary>
+		public bool IsCheckedStartAtSystemStartup
+		{
+			get { return _isCheckedStartAtSystemStartup; }
+			set
+			{
+				_isCheckedStartAtSystemStartup = value;
 
-                if (value)
-                {
-                    RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true);
+				if (value)
+				{
+					RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true);
 
-                    if (key != null)
-                    {
-                        string applicationPath = Assembly.GetExecutingAssembly().Location;
+					if (key != null)
+					{
+						string applicationPath = Assembly.GetExecutingAssembly().Location;
 
-                        string applicationName = Process.GetCurrentProcess().ProcessName;
+						string applicationName = Process.GetCurrentProcess().ProcessName;
 
-                        key.SetValue(applicationName, applicationPath);
+						key.SetValue(applicationName, applicationPath);
 
-                        key.Close();
-                    }
-                }
-                else
-                {
-                    RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true);
+						key.Close();
+					}
+				}
+				else
+				{
+					RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true);
 
-                    if (key != null)
-                    {
-                        string applicationName = Process.GetCurrentProcess().ProcessName;
+					if (key != null)
+					{
+						string applicationName = Process.GetCurrentProcess().ProcessName;
 
-                        object subKey = key.GetValue(applicationName);
+						object subKey = key.GetValue(applicationName);
 
-                        if (subKey != null)
-                        {
-                            key.DeleteValue(applicationName);
-                        }
+						if (subKey != null)
+						{
+							key.DeleteValue(applicationName);
+						}
 
-                        key.Close();
-                    }
-                }
+						key.Close();
+					}
+				}
 
-                NotifyPropertyChanged("IsCheckedStartAtSystemStartup");
-            }
-        }
+				NotifyPropertyChanged("IsCheckedStartAtSystemStartup");
+			}
+		}
 
-        #endregion
+		#endregion
 
-        #region DLLs
+		#region DLLs
 
 		[DllImport("User32.dll")]
 		private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
@@ -245,26 +245,26 @@ namespace ScreenTemperature
 		[DllImport("User32.dll")]
 		private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
-        #endregion
+		#endregion
 
-        #region Constructor
+		#region Constructor
 
-        public MainWindow()
+		public MainWindow()
 		{
-		    var container = new Container();
-		    container.Register<IConfigService, ConfigService>();
-		    container.Register<IScreenColorService, ScreenColorService>();
-            container.Register<IMonitorService, MonitorService>();
-            container.Verify();
+			var container = new Container();
+			container.Register<IConfigService, ConfigService>();
+			container.Register<IScreenColorService, ScreenColorService>();
+			container.Register<IMonitorService, MonitorService>();
+			container.Verify();
 
-		    _configService = container.GetInstance<IConfigService>();
-		    _temperatureService = container.GetInstance<IScreenColorService>();
-            _monitorService = container.GetInstance<IMonitorService>();
+			_configService = container.GetInstance<IConfigService>();
+			_temperatureService = container.GetInstance<IScreenColorService>();
+			_monitorService = container.GetInstance<IMonitorService>();
 
-            Monitors = new ObservableCollection<Monitor>(_monitorService.GetMonitors());
-		    SelectedMonitor = Monitors.FirstOrDefault();
+			Monitors = new ObservableCollection<Monitor>(_monitorService.GetMonitors());
+			SelectedMonitor = Monitors.FirstOrDefault();
 
-            bool exists = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location)).Length > 1;
+			bool exists = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location)).Length > 1;
 
 			if (exists)//If this program already has an instance
 			{
@@ -298,257 +298,257 @@ namespace ScreenTemperature
 			_notifyIcon.Click += NotifyIconOnClick;
 			_notifyIcon.Visible = true;
 
-            
+			
 
-            Configs = new ObservableCollection<Config>(_configService.GetConfigs().OrderBy(conf => conf.Order));
+			Configs = new ObservableCollection<Config>(_configService.GetConfigs().OrderBy(conf => conf.Order));
 
-            if (Configs.Count > 0)
-            {
-                SelectedConfig = Configs[0];
-            }
+			if (Configs.Count > 0)
+			{
+				SelectedConfig = Configs[0];
+			}
 
 
 
-            RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true);
+			RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true);
 
-            if (key != null)
-            {
-                string applicationName = Process.GetCurrentProcess().ProcessName;
+			if (key != null)
+			{
+				string applicationName = Process.GetCurrentProcess().ProcessName;
 
-                object subKey = key.GetValue(applicationName);
+				object subKey = key.GetValue(applicationName);
 
-                IsCheckedStartAtSystemStartup = subKey != null;
+				IsCheckedStartAtSystemStartup = subKey != null;
 
-                key.Close();
-            }
+				key.Close();
+			}
 
-		    SystemEvents.SessionSwitch += SystemEventsOnSessionSwitch;
-            SystemEvents.UserPreferenceChanging += SystemEvents_UserPreferenceChanging;
-		    SystemEvents.PaletteChanged += SystemEvents_PaletteChanged;
-		    SystemEvents.DisplaySettingsChanged += SystemEvents_DisplaySettingsChanged;
+			SystemEvents.SessionSwitch += SystemEventsOnSessionSwitch;
+			SystemEvents.UserPreferenceChanging += SystemEvents_UserPreferenceChanging;
+			SystemEvents.PaletteChanged += SystemEvents_PaletteChanged;
+			SystemEvents.DisplaySettingsChanged += SystemEvents_DisplaySettingsChanged;
 
-            InitializeComponent();
+			InitializeComponent();
 		}
 
-	    ~MainWindow()
-	    {
-	        SystemEvents.UserPreferenceChanging -= SystemEvents_UserPreferenceChanging;
-	        SystemEvents.PaletteChanged -= SystemEvents_PaletteChanged;
-	        SystemEvents.DisplaySettingsChanged -= SystemEvents_DisplaySettingsChanged;
-	        SystemEvents.SessionSwitch -= SystemEventsOnSessionSwitch;
+		~MainWindow()
+		{
+			SystemEvents.UserPreferenceChanging -= SystemEvents_UserPreferenceChanging;
+			SystemEvents.PaletteChanged -= SystemEvents_PaletteChanged;
+			SystemEvents.DisplaySettingsChanged -= SystemEvents_DisplaySettingsChanged;
+			SystemEvents.SessionSwitch -= SystemEventsOnSessionSwitch;
 
-	        _notifyIcon.Click -= NotifyIconOnClick;
-        }
+			_notifyIcon.Click -= NotifyIconOnClick;
+		}
 
-        #endregion
+		#endregion
 
-        #region Events
+		#region Events
 
-	    private void SystemEvents_DisplaySettingsChanged(object sender, EventArgs e)
-	    {
-	        _temperatureService.ChangeScreenColorFromConfig((SelectedConfig));
-	    }
+		private void SystemEvents_DisplaySettingsChanged(object sender, EventArgs e)
+		{
+			_temperatureService.ChangeScreenColorFromConfig((SelectedConfig));
+		}
 
-	    private void SystemEvents_PaletteChanged(object sender, EventArgs e)
-	    {
-	        _temperatureService.ChangeScreenColorFromConfig(SelectedConfig);
-	    }
+		private void SystemEvents_PaletteChanged(object sender, EventArgs e)
+		{
+			_temperatureService.ChangeScreenColorFromConfig(SelectedConfig);
+		}
 
-	    private void SystemEvents_UserPreferenceChanging(object sender, UserPreferenceChangingEventArgs e)
-	    {
-	        _temperatureService.ChangeScreenColorFromConfig(SelectedConfig);
-	    }
+		private void SystemEvents_UserPreferenceChanging(object sender, UserPreferenceChangingEventArgs e)
+		{
+			_temperatureService.ChangeScreenColorFromConfig(SelectedConfig);
+		}
 
-	    /// <summary>
-	    /// When we log in to the session
-	    /// </summary>
-	    /// <param name="sender"></param>
-	    /// <param name="sessionSwitchEventArgs"></param>
-	    private void SystemEventsOnSessionSwitch(object sender, SessionSwitchEventArgs sessionSwitchEventArgs)
-	    {
-	        if (sessionSwitchEventArgs.Reason == SessionSwitchReason.SessionUnlock || sessionSwitchEventArgs.Reason == SessionSwitchReason.SessionLogon)
-	        {
-	            _temperatureService.ChangeScreenColorFromConfig(SelectedConfig);
-	        }
-	    }
+		/// <summary>
+		/// When we log in to the session
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="sessionSwitchEventArgs"></param>
+		private void SystemEventsOnSessionSwitch(object sender, SessionSwitchEventArgs sessionSwitchEventArgs)
+		{
+			if (sessionSwitchEventArgs.Reason == SessionSwitchReason.SessionUnlock || sessionSwitchEventArgs.Reason == SessionSwitchReason.SessionLogon)
+			{
+				_temperatureService.ChangeScreenColorFromConfig(SelectedConfig);
+			}
+		}
 
-	    /// <summary>
-	    /// When we click on notifyIcon
-	    /// </summary>
-	    /// <param name="sender"></param>
-	    /// <param name="eventArgs"></param>
-	    private void NotifyIconOnClick(object sender, EventArgs eventArgs)
-	    {
-	        _notifyIcon.Visible = false;
-	        Show();
-	        Activate();
-	        WindowState = WindowState.Normal;
-	    }
+		/// <summary>
+		/// When we click on notifyIcon
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="eventArgs"></param>
+		private void NotifyIconOnClick(object sender, EventArgs eventArgs)
+		{
+			_notifyIcon.Visible = false;
+			Show();
+			Activate();
+			WindowState = WindowState.Normal;
+		}
 
-        /// <summary>
+		/// <summary>
 		/// Wait for another instance of the application
 		/// </summary>
 		/// <param name="iar"></param>
 		private void WaitForConnectionCallBack(IAsyncResult iar)
-        {
-            try
-            {
-                _pipeServer.EndWaitForConnection(iar);
+		{
+			try
+			{
+				_pipeServer.EndWaitForConnection(iar);
 
-                _pipeServer.Close();
-                _pipeServer = null;
+				_pipeServer.Close();
+				_pipeServer = null;
 
-                Dispatcher.Invoke(() =>
-                {
-                    if (SelectedConfigIndex == -1)
-                    {
-                        SelectedConfigIndex = 0;
-                    }
-                    else
-                    {
-                        if (SelectedConfigIndex + 1 == Configs.Count)
-                        {
-                            SelectedConfigIndex = 0;
-                        }
-                        else
-                        {
-                            SelectedConfigIndex++;
-                        }
-                    }
-                });
+				Dispatcher.Invoke(() =>
+				{
+					if (SelectedConfigIndex == -1)
+					{
+						SelectedConfigIndex = 0;
+					}
+					else
+					{
+						if (SelectedConfigIndex + 1 == Configs.Count)
+						{
+							SelectedConfigIndex = 0;
+						}
+						else
+						{
+							SelectedConfigIndex++;
+						}
+					}
+				});
 
-                _pipeServer = new NamedPipeServerStream("instance", PipeDirection.In,
-                   1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+				_pipeServer = new NamedPipeServerStream("instance", PipeDirection.In,
+				   1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
 
-                // On continue en boucle
-                _pipeServer.BeginWaitForConnection(WaitForConnectionCallBack, _pipeServer);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show($"Une erreur est survenue dans le pipe.\r\n{e.Message}", "Erreur");
-            }
-        }
+				// On continue en boucle
+				_pipeServer.BeginWaitForConnection(WaitForConnectionCallBack, _pipeServer);
+			}
+			catch (Exception e)
+			{
+				MessageBox.Show($"Une erreur est survenue dans le pipe.\r\n{e.Message}", "Erreur");
+			}
+		}
 
-        private void MainForm_StateChanged(object sender, EventArgs e)
-        {
-            if (WindowState == WindowState.Minimized)
-            {
-                _notifyIcon.Visible = true;
-                Hide();
-            }
-        }
+		private void MainForm_StateChanged(object sender, EventArgs e)
+		{
+			if (WindowState == WindowState.Minimized)
+			{
+				_notifyIcon.Visible = true;
+				Hide();
+			}
+		}
 
-        private void Window_OnKeyUp(object sender, KeyEventArgs keyEventArgs)
-        {
-            if (IsWaitingForKeyInput)
-            {
-                if (keyEventArgs.Key == Key.Escape)
-                {
+		private void Window_OnKeyUp(object sender, KeyEventArgs keyEventArgs)
+		{
+			if (IsWaitingForKeyInput)
+			{
+				if (keyEventArgs.Key == Key.Escape)
+				{
 
-                }
-                else if (keyEventArgs.Key == Key.Back)
-                {
-                    if (SelectedConfig.KeyBinding != null)
-                    {
-                        UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
-                    }
+				}
+				else if (keyEventArgs.Key == Key.Back)
+				{
+					if (SelectedConfig.KeyBinding != null)
+					{
+						UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
+					}
 
-                    SelectedConfig.KeyBinding = null;
-                    _configService.SaveConfig(SelectedConfig);
-                }
-                else
-                {
-                    if (SelectedConfig.KeyBinding != null)
-                    {
-                        UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
-                    }
+					SelectedConfig.KeyBinding = null;
+					_configService.SaveConfig(SelectedConfig);
+				}
+				else
+				{
+					if (SelectedConfig.KeyBinding != null)
+					{
+						UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
+					}
 
-                    SelectedConfig.KeyBinding = new KeyData(keyEventArgs.Key == Key.System ? keyEventArgs.SystemKey : keyEventArgs.Key, Keyboard.IsKeyDown(Key.LeftShift), Keyboard.IsKeyDown(Key.LeftAlt), Keyboard.IsKeyDown(Key.LeftCtrl));
-                    _configService.SaveConfig(SelectedConfig);
+					SelectedConfig.KeyBinding = new KeyData(keyEventArgs.Key == Key.System ? keyEventArgs.SystemKey : keyEventArgs.Key, Keyboard.IsKeyDown(Key.LeftShift), Keyboard.IsKeyDown(Key.LeftAlt), Keyboard.IsKeyDown(Key.LeftCtrl));
+					_configService.SaveConfig(SelectedConfig);
 
-                    uint mask = SelectedConfig.KeyBinding.Alt ? (uint)0x0001 : 0;
-                    mask = mask | (SelectedConfig.KeyBinding.Control ? (uint)0x0002 : 0);
-                    mask = mask | (SelectedConfig.KeyBinding.Shift ? (uint)0x0004 : 0);
-                    mask = mask | 0x4000;
+					uint mask = SelectedConfig.KeyBinding.Alt ? (uint)0x0001 : 0;
+					mask = mask | (SelectedConfig.KeyBinding.Control ? (uint)0x0002 : 0);
+					mask = mask | (SelectedConfig.KeyBinding.Shift ? (uint)0x0004 : 0);
+					mask = mask | 0x4000;
 
-                    int virtualKeyCode = KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key);
+					int virtualKeyCode = KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key);
 
-                    if (!RegisterHotKey(_windowHandle, virtualKeyCode, mask, (uint)virtualKeyCode))
-                    {
-                        MessageBox.Show("Cannot bind key " + SelectedConfig.KeyBinding);
-                    }
-                }
+					if (!RegisterHotKey(_windowHandle, virtualKeyCode, mask, (uint)virtualKeyCode))
+					{
+						MessageBox.Show("Cannot bind key " + SelectedConfig.KeyBinding);
+					}
+				}
 
-                IsWaitingForKeyInput = false;
-            }
-        }
+				IsWaitingForKeyInput = false;
+			}
+		}
 
-        private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
-        {
-            _windowHandle = (new WindowInteropHelper(this)).Handle;
+		private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
+		{
+			_windowHandle = (new WindowInteropHelper(this)).Handle;
 
-            HwndSource src = HwndSource.FromHwnd(_windowHandle);
-            src?.AddHook(WndProc);
+			HwndSource src = HwndSource.FromHwnd(_windowHandle);
+			src?.AddHook(WndProc);
 
-            foreach (Config conf in Configs)
-            {
-                if (conf.KeyBinding != null)
-                {
-                    uint mask = conf.KeyBinding.Alt ? (uint)0x0001 : 0;
-                    mask = mask | (conf.KeyBinding.Control ? (uint)0x0002 : 0);
-                    mask = mask | (conf.KeyBinding.Shift ? (uint)0x0004 : 0);
-                    mask = mask | 0x4000;
+			foreach (Config conf in Configs)
+			{
+				if (conf.KeyBinding != null)
+				{
+					uint mask = conf.KeyBinding.Alt ? (uint)0x0001 : 0;
+					mask = mask | (conf.KeyBinding.Control ? (uint)0x0002 : 0);
+					mask = mask | (conf.KeyBinding.Shift ? (uint)0x0004 : 0);
+					mask = mask | 0x4000;
 
-                    int virtualKeyCode = KeyInterop.VirtualKeyFromKey(conf.KeyBinding.Key);
+					int virtualKeyCode = KeyInterop.VirtualKeyFromKey(conf.KeyBinding.Key);
 
-                    if (!RegisterHotKey(_windowHandle, virtualKeyCode, mask, (uint)virtualKeyCode))
-                    {
-                        MessageBox.Show("Cannot bind key " + conf.KeyBinding);
-                    }
-                }
-            }
+					if (!RegisterHotKey(_windowHandle, virtualKeyCode, mask, (uint)virtualKeyCode))
+					{
+						MessageBox.Show("Cannot bind key " + conf.KeyBinding);
+					}
+				}
+			}
 
-            WindowState = WindowState.Minimized;
-        }
+			WindowState = WindowState.Minimized;
+		}
 
-	    /// <summary>
-	    /// Messages handler
-	    /// </summary>
-	    /// <param name="hwnd"></param>
-	    /// <param name="msg"></param>
-	    /// <param name="wParam"></param>
-	    /// <param name="lParam"></param>
-	    /// <param name="handled"></param>
-	    /// <returns></returns>
-	    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-	    {
-	        if (msg == 0x312)//Si c'est une touche pressée (à partir de registerhotkey)
-	        {
-	            Key key = KeyInterop.KeyFromVirtualKey(wParam.ToInt32());
+		/// <summary>
+		/// Messages handler
+		/// </summary>
+		/// <param name="hwnd"></param>
+		/// <param name="msg"></param>
+		/// <param name="wParam"></param>
+		/// <param name="lParam"></param>
+		/// <param name="handled"></param>
+		/// <returns></returns>
+		private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+		{
+			if (msg == 0x312)//Si c'est une touche pressée (à partir de registerhotkey)
+			{
+				Key key = KeyInterop.KeyFromVirtualKey(wParam.ToInt32());
 
-	            SelectedConfig = Configs.FirstOrDefault(x => x.KeyBinding.Key == key);
-	        }
+				SelectedConfig = Configs.FirstOrDefault(x => x.KeyBinding.Key == key);
+			}
 
-	        return IntPtr.Zero;
-	    }
+			return IntPtr.Zero;
+		}
 
-        #endregion
+		#endregion
 
-        #region Methods
+		#region Methods
 
-        /// <summary>
-        /// Move the config down in the list
-        /// </summary>
-        /// <param name="obj"></param>
-        private void MoveConfigDown(object obj)
+		/// <summary>
+		/// Move the config down in the list
+		/// </summary>
+		/// <param name="obj"></param>
+		private void MoveConfigDown(object obj)
 		{
 			if (SelectedConfigIndex < Configs.Count - 1)
 			{
 				SelectedConfig.Order++;
-			    _configService.SaveConfig(SelectedConfig);
-                Configs[SelectedConfigIndex + 1].Order--;
-			    _configService.SaveConfig(Configs[SelectedConfigIndex + 1]);
-                Configs.Move(SelectedConfigIndex, SelectedConfigIndex + 1);
+				_configService.SaveConfig(SelectedConfig);
+				Configs[SelectedConfigIndex + 1].Order--;
+				_configService.SaveConfig(Configs[SelectedConfigIndex + 1]);
+				Configs.Move(SelectedConfigIndex, SelectedConfigIndex + 1);
 			}
 		}
 
@@ -561,10 +561,10 @@ namespace ScreenTemperature
 			if (SelectedConfigIndex > 0)
 			{
 				SelectedConfig.Order--;
-			    _configService.SaveConfig(SelectedConfig);
+				_configService.SaveConfig(SelectedConfig);
 				Configs[SelectedConfigIndex - 1].Order++;
-			    _configService.SaveConfig(Configs[SelectedConfigIndex - 1]);
-                Configs.Move(SelectedConfigIndex, SelectedConfigIndex - 1);
+				_configService.SaveConfig(Configs[SelectedConfigIndex - 1]);
+				Configs.Move(SelectedConfigIndex, SelectedConfigIndex - 1);
 			}
 		}
 
@@ -574,22 +574,22 @@ namespace ScreenTemperature
 		/// <param name="obj"></param>
 		private void SaveConfig(object obj)
 		{
-		    Config existingConfig = Configs.FirstOrDefault(x => x.ConfigName == TextNameConfig);//Check if this config alreay exist
+			Config existingConfig = Configs.FirstOrDefault(x => x.ConfigName == TextNameConfig);//Check if this config alreay exist
 
-		    Config config = _temperatureService.SaveCurrentScreenColorToConfig(TextNameConfig);
+			Config config = _temperatureService.SaveCurrentScreenColorToConfig(TextNameConfig);
 
-		    if (config != null)
-		    {
-		        if (existingConfig == null)
-		        {
-		            Configs.Add(config);
-                }
-		        else
-		        {
-		            int index = Configs.IndexOf(existingConfig);
-		            Configs[index] = config;
-		        }
-		    }
+			if (config != null)
+			{
+				if (existingConfig == null)
+				{
+					Configs.Add(config);
+				}
+				else
+				{
+					int index = Configs.IndexOf(existingConfig);
+					Configs[index] = config;
+				}
+			}
 		}
 
 		private void AssignKeyToConfig(object obj)
@@ -604,19 +604,19 @@ namespace ScreenTemperature
 				UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
 			}
 
-		    if (_configService.DeleteConfig(SelectedConfig))
-		    {
-		        Configs.RemoveAt(SelectedConfigIndex);
-		        SelectedConfigIndex = 0;
-            }
+			if (_configService.DeleteConfig(SelectedConfig))
+			{
+				Configs.RemoveAt(SelectedConfigIndex);
+				SelectedConfigIndex = 0;
+			}
 		}
 
-        #endregion
+		#endregion
 
-        #region Implémentation INotifyPropertyChanged
+		#region Implémentation INotifyPropertyChanged
 
-        //INotifyPropertyChanged implementation
-        public event PropertyChangedEventHandler PropertyChanged;
+		//INotifyPropertyChanged implementation
+		public event PropertyChangedEventHandler PropertyChanged;
 		private void NotifyPropertyChanged(String propertyName)
 		{
 			if (PropertyChanged != null)

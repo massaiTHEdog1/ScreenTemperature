@@ -1,108 +1,108 @@
 ﻿<Window
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	xmlns:converters="clr-namespace:ScreenTemperature.Converters"
 	x:Class="ScreenTemperature.MainWindow"
-    mc:Ignorable="d"
-    Title="ScreenTemperature" Height="364" Width="294" StateChanged="MainForm_StateChanged" ResizeMode="CanMinimize"
+	mc:Ignorable="d"
+	Title="ScreenTemperature" Height="364" Width="294" StateChanged="MainForm_StateChanged" ResizeMode="CanMinimize"
 	DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
 	KeyUp="Window_OnKeyUp"
 	Loaded="MainWindow_OnLoaded">
 
-    <Window.Resources>
-        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
-    </Window.Resources>
-    <Grid>
-        <Grid Margin="10,10,10,5">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            
+	<Window.Resources>
+		<converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+		<converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+	</Window.Resources>
+	<Grid>
+		<Grid Margin="10,10,10,5">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto"/>
+				<RowDefinition Height="Auto"/>
+				<RowDefinition Height="Auto"/>
+				<RowDefinition Height="Auto"/>
+				<RowDefinition Height="*"/>
+				<RowDefinition Height="Auto"/>
+			</Grid.RowDefinitions>
+			
 
-            <TextBlock Grid.Row="0" Margin="0,0,0,5">Screen</TextBlock>
+			<TextBlock Grid.Row="0" Margin="0,0,0,5">Screen</TextBlock>
 
-            <ComboBox Grid.Row="1" Width="100" HorizontalAlignment="Left" ItemsSource="{Binding Monitors}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"/>
+			<ComboBox Grid.Row="1" Width="100" HorizontalAlignment="Left" ItemsSource="{Binding Monitors}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"/>
 
-            <TextBlock Grid.Row="2" Margin="0,5,0,5">
-                <Run Text="Temperature: "/>
-                <Run Text="{Binding KelvinValue, Mode=TwoWay}"/>
-                <Run Text=" K"/>
-            </TextBlock>
+			<TextBlock Grid.Row="2" Margin="0,5,0,5">
+				<Run Text="Temperature: "/>
+				<Run Text="{Binding KelvinValue, Mode=TwoWay}"/>
+				<Run Text=" K"/>
+			</TextBlock>
 
-            <Slider Grid.Row="3" Minimum="2000" Maximum="6600" Interval="10" Value="{Binding KelvinValue, Mode=TwoWay}"/>
+			<Slider Grid.Row="3" Minimum="2000" Maximum="6600" Interval="10" Value="{Binding KelvinValue, Mode=TwoWay}"/>
 
-            <GroupBox Grid.Row="4" Header="Configurations">
-                <Grid Margin="0,5,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="150"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+			<GroupBox Grid.Row="4" Header="Configurations">
+				<Grid Margin="0,5,0,0">
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="*"/>
+						<RowDefinition Height="Auto"/>
+					</Grid.RowDefinitions>
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="150"/>
+						<ColumnDefinition Width="*"/>
+					</Grid.ColumnDefinitions>
 
-                    <Grid Grid.Row="0" Grid.ColumnSpan="3">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="20"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+					<Grid Grid.Row="0" Grid.ColumnSpan="3">
+						<Grid.RowDefinitions>
+							<RowDefinition Height="20"/>
+						</Grid.RowDefinitions>
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="100"/>
+							<ColumnDefinition Width="*"/>
+						</Grid.ColumnDefinitions>
 
-                        <TextBox Grid.Column="0" TextWrapping="NoWrap" VerticalContentAlignment="Center" Text="{Binding TextNameConfig, Mode=TwoWay}"/>
-                        <Button Grid.Column="1" Content="Save current screen color" Command="{Binding SaveConfigCommand}"/>
-                    </Grid>
+						<TextBox Grid.Column="0" TextWrapping="NoWrap" VerticalContentAlignment="Center" Text="{Binding TextNameConfig, Mode=TwoWay}"/>
+						<Button Grid.Column="1" Content="Save current screen color" Command="{Binding SaveConfigCommand}"/>
+					</Grid>
 
-                    <Separator Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,5"/>
+					<Separator Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,5"/>
 
-                    <ListBox Grid.Row="2" Grid.Column="0" IsSynchronizedWithCurrentItem="True" 
-						     ItemsSource="{Binding Configs}" 
-						     SelectedIndex="{Binding SelectedConfigIndex, Mode=TwoWay}" 
-						     SelectedItem="{Binding SelectedConfig, Mode=TwoWay}"/>
+					<ListBox Grid.Row="2" Grid.Column="0" IsSynchronizedWithCurrentItem="True" 
+							 ItemsSource="{Binding Configs}" 
+							 SelectedIndex="{Binding SelectedConfigIndex, Mode=TwoWay}" 
+							 SelectedItem="{Binding SelectedConfig, Mode=TwoWay}"/>
 
-                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="5,0,0,0" Visibility="{Binding SelectedConfig, Converter={StaticResource NullToVisibilityConverter}}">
-                        <Button Command="{Binding MoveConfigUpCommand}">
-                            <Image Height="11" Width="57" Source="Resources/arrow_up.png"/>
-                        </Button>
+					<StackPanel Grid.Row="2" Grid.Column="1" Margin="5,0,0,0" Visibility="{Binding SelectedConfig, Converter={StaticResource NullToVisibilityConverter}}">
+						<Button Command="{Binding MoveConfigUpCommand}">
+							<Image Height="11" Width="57" Source="Resources/arrow_up.png"/>
+						</Button>
 
-                        <Button Margin="0,5,0,0" Command="{Binding MoveConfigDownCommand}">
-                            <Image Height="11" Width="57" Source="Resources/arrow_down.png"/>
-                        </Button>
+						<Button Margin="0,5,0,0" Command="{Binding MoveConfigDownCommand}">
+							<Image Height="11" Width="57" Source="Resources/arrow_down.png"/>
+						</Button>
 
-                        <Button Content="Assign Key" Margin="0,5,0,0" Command="{Binding AssignKeyToConfigCommand}"/>
+						<Button Content="Assign Key" Margin="0,5,0,0" Command="{Binding AssignKeyToConfigCommand}"/>
 
-                        <TextBlock Text="{Binding SelectedConfig.KeyBinding}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
+						<TextBlock Text="{Binding SelectedConfig.KeyBinding}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
 
-                        <Button Content="Delete" Margin="0,5,0,0" Command="{Binding DeleteConfigCommand}"/>
-                    </StackPanel>
-                    
-                   <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,0">
-                       <CheckBox Margin="0,0,5,0" IsChecked="{Binding IsCheckedStartAtSystemStartup}"/>
-                       <TextBlock Text="Start application on system startup"/>
-                    </StackPanel>
-                </Grid>
-            </GroupBox>
+						<Button Content="Delete" Margin="0,5,0,0" Command="{Binding DeleteConfigCommand}"/>
+					</StackPanel>
+					
+				   <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,0">
+					   <CheckBox Margin="0,0,5,0" IsChecked="{Binding IsCheckedStartAtSystemStartup}"/>
+					   <TextBlock Text="Start application on system startup"/>
+					</StackPanel>
+				</Grid>
+			</GroupBox>
 
-            <TextBlock Grid.Row="5" HorizontalAlignment="Right">Version 1</TextBlock>
-        </Grid>
-        <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Background="White" Visibility="{Binding IsWaitingForKeyInput, Converter={StaticResource BoolToVisibilityConverter}}">
-            <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="Press a key" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Text="ESC to cancel" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Text="Back to delete" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-            </StackPanel>
-        </Grid>
-    </Grid>
+			<TextBlock Grid.Row="5" HorizontalAlignment="Right">Version 1</TextBlock>
+		</Grid>
+		<Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Background="White" Visibility="{Binding IsWaitingForKeyInput, Converter={StaticResource BoolToVisibilityConverter}}">
+			<StackPanel VerticalAlignment="Center">
+				<TextBlock Text="Press a key" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+				<TextBlock Text="ESC to cancel" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+				<TextBlock Text="Back to delete" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+			</StackPanel>
+		</Grid>
+	</Grid>
 </Window>
