@@ -2,6 +2,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -11,10 +13,12 @@ using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media.Imaging;
 using ScreenTemperature.Classes;
 using Microsoft.Win32;
 using ScreenTemperature.Services;
 using ScreenTemperature.Services.Interfaces;
+using Color = System.Windows.Media.Color;
 using Container = SimpleInjector.Container;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MessageBox = System.Windows.MessageBox;
@@ -43,13 +47,22 @@ namespace ScreenTemperature
 		private Monitor _selectedMonitor;
 		private string _textNameConfig;
 		private bool _isWaitingForKeyInput;
-		private bool _isCheckedStartAtSystemStartup;
+		private bool _isCheckboxStartAtSystemStartupChecked;
+		private bool _isRadioButtonUseTannerHellandAlgorithmChecked;
+		private bool _isRadioButtonUseImageChecked;
+		private int _imageSliderValue = 1000;
+		private Color _selectedColor = new Color() { A = 255, R = 255, G = 186, B = 127 };
+		private BitmapImage _imageGradient;
+
+		#region Commands
 
 		public ICommand AssignKeyToConfigCommand { get; private set; }
-		public ICommand SaveConfigCommand { get; private set; }
-		public ICommand DeleteConfigCommand { get; private set; }
-		public ICommand MoveConfigUpCommand { get; private set; }
-		public ICommand MoveConfigDownCommand { get; private set; }
+			public ICommand SaveConfigCommand { get; private set; }
+			public ICommand DeleteConfigCommand { get; private set; }
+			public ICommand MoveConfigUpCommand { get; private set; }
+			public ICommand MoveConfigDownCommand { get; private set; } 
+
+		#endregion
 
 		#region Services
 
@@ -190,12 +203,12 @@ namespace ScreenTemperature
 		/// <summary>
 		/// Start the software at system startup?
 		/// </summary>
-		public bool IsCheckedStartAtSystemStartup
+		public bool IsCheckboxStartAtSystemStartupChecked
 		{
-			get { return _isCheckedStartAtSystemStartup; }
+			get { return _isCheckboxStartAtSystemStartupChecked; }
 			set
 			{
-				_isCheckedStartAtSystemStartup = value;
+				_isCheckboxStartAtSystemStartupChecked = value;
 
 				if (value)
 				{
@@ -231,7 +244,83 @@ namespace ScreenTemperature
 					}
 				}
 
-				NotifyPropertyChanged("IsCheckedStartAtSystemStartup");
+				NotifyPropertyChanged("IsCheckboxStartAtSystemStartupChecked");
+			}
+		}
+
+		public bool IsRadioButtonUseTannerHellandAlgorithmChecked
+		{
+			get { return _isRadioButtonUseTannerHellandAlgorithmChecked; }
+			set
+			{
+				_isRadioButtonUseTannerHellandAlgorithmChecked = value;
+				NotifyPropertyChanged("IsRadioButtonUseTannerHellandAlgorithmChecked");
+			}
+		}
+
+		public bool IsRadioButtonUseImageChecked
+		{
+			get { return _isRadioButtonUseImageChecked; }
+			set
+			{
+				_isRadioButtonUseImageChecked = value;
+				NotifyPropertyChanged("IsRadioButtonUseImageChecked");
+			}
+		}
+
+		/// <summary>
+		/// Image slider's value
+		/// </summary>
+		public int ImageSliderValue
+		{
+			get { return _imageSliderValue; }
+			set
+			{
+				_imageSliderValue = value;
+				NotifyPropertyChanged("ImageSliderValue");
+
+				_temperatureService.ChangeScreenColorFromImage(value, SelectedMonitor, ImageGradient);
+			}
+		}
+
+		public Color SelectedColor
+		{
+			get { return _selectedColor; }
+			set
+			{
+				_selectedColor = value;
+				NotifyPropertyChanged("SelectedColor");
+
+				using (Bitmap bitmap = new Bitmap(1000, 1))
+				using (Graphics graphics = Graphics.FromImage(bitmap))
+				using (LinearGradientBrush brush = new LinearGradientBrush(
+					new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+					System.Drawing.Color.FromArgb(SelectedColor.A, SelectedColor.R, SelectedColor.G, SelectedColor.B),
+					System.Drawing.Color.White,
+					LinearGradientMode.Horizontal))
+				using (MemoryStream memory = new MemoryStream())
+				{
+					graphics.FillRectangle(brush, new Rectangle(0, 0, bitmap.Width, bitmap.Height));
+					bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Bmp);
+					memory.Position = 0;
+					BitmapImage bitmapimage = new BitmapImage();
+					bitmapimage.BeginInit();
+					bitmapimage.StreamSource = memory;
+					bitmapimage.CacheOption = BitmapCacheOption.OnLoad;
+					bitmapimage.EndInit();
+
+					ImageGradient = bitmapimage;
+				}
+			}
+		}
+
+		public BitmapImage ImageGradient
+		{
+			get { return _imageGradient; }
+			set
+			{
+				_imageGradient = value;
+				NotifyPropertyChanged("ImageGradient");
 			}
 		}
 
@@ -298,30 +387,6 @@ namespace ScreenTemperature
 			_notifyIcon.Click += NotifyIconOnClick;
 			_notifyIcon.Visible = true;
 
-			
-
-			Configs = new ObservableCollection<Config>(_configService.GetConfigs().OrderBy(conf => conf.Order));
-
-			if (Configs.Count > 0)
-			{
-				SelectedConfig = Configs[0];
-			}
-
-
-
-			RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true);
-
-			if (key != null)
-			{
-				string applicationName = Process.GetCurrentProcess().ProcessName;
-
-				object subKey = key.GetValue(applicationName);
-
-				IsCheckedStartAtSystemStartup = subKey != null;
-
-				key.Close();
-			}
-
 			SystemEvents.SessionSwitch += SystemEventsOnSessionSwitch;
 			SystemEvents.UserPreferenceChanging += SystemEvents_UserPreferenceChanging;
 			SystemEvents.PaletteChanged += SystemEvents_PaletteChanged;
@@ -338,6 +403,9 @@ namespace ScreenTemperature
 			SystemEvents.SessionSwitch -= SystemEventsOnSessionSwitch;
 
 			_notifyIcon.Click -= NotifyIconOnClick;
+			_notifyIcon.Visible = false;
+			_notifyIcon.Icon.Dispose();
+			_notifyIcon.Dispose();
 		}
 
 		#endregion
@@ -485,6 +553,32 @@ namespace ScreenTemperature
 
 		private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
 		{
+			IsRadioButtonUseTannerHellandAlgorithmChecked = true;
+
+			SelectedColor = _selectedColor;
+
+			Configs = new ObservableCollection<Config>(_configService.GetConfigs().OrderBy(conf => conf.Order));
+
+			if (Configs.Count > 0)
+			{
+				SelectedConfig = Configs[0];
+			}
+
+
+
+			RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true);
+
+			if (key != null)
+			{
+				string applicationName = Process.GetCurrentProcess().ProcessName;
+
+				object subKey = key.GetValue(applicationName);
+
+				IsCheckboxStartAtSystemStartupChecked = subKey != null;
+
+				key.Close();
+			}
+
 			_windowHandle = (new WindowInteropHelper(this)).Handle;
 
 			HwndSource src = HwndSource.FromHwnd(_windowHandle);

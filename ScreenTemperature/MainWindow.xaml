@@ -4,9 +4,10 @@
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	xmlns:converters="clr-namespace:ScreenTemperature.Converters"
+	xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
 	x:Class="ScreenTemperature.MainWindow"
 	mc:Ignorable="d"
-	Title="ScreenTemperature" Height="364" Width="294" StateChanged="MainForm_StateChanged" ResizeMode="CanMinimize"
+	Title="ScreenTemperature" Height="394" Width="294" StateChanged="MainForm_StateChanged" ResizeMode="CanMinimize"
 	DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
 	KeyUp="Window_OnKeyUp"
 	Loaded="MainWindow_OnLoaded">
@@ -16,30 +17,51 @@
 		<converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
 	</Window.Resources>
 	<Grid>
-		<Grid Margin="10,10,10,5">
+		<Grid Margin="10,0,10,5">
 			<Grid.RowDefinitions>
-				<RowDefinition Height="Auto"/>
 				<RowDefinition Height="Auto"/>
 				<RowDefinition Height="Auto"/>
 				<RowDefinition Height="Auto"/>
 				<RowDefinition Height="*"/>
 				<RowDefinition Height="Auto"/>
 			</Grid.RowDefinitions>
-			
 
-			<TextBlock Grid.Row="0" Margin="0,0,0,5">Screen</TextBlock>
+			<ComboBox Grid.Row="0" Width="100" HorizontalAlignment="Left" ItemsSource="{Binding Monitors}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"/>
 
-			<ComboBox Grid.Row="1" Width="100" HorizontalAlignment="Left" ItemsSource="{Binding Monitors}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"/>
+			<StackPanel Grid.Row="1" Margin="0,10,0,0">
+				<RadioButton GroupName="Algorithm" Content="Use Tanner Helland's algorithm" IsChecked="{Binding IsRadioButtonUseTannerHellandAlgorithmChecked}"/>
+				<RadioButton GroupName="Algorithm" Content="Use custom color" IsChecked="{Binding IsRadioButtonUseImageChecked}"/>
+			</StackPanel>
 
-			<TextBlock Grid.Row="2" Margin="0,5,0,5">
-				<Run Text="Temperature: "/>
-				<Run Text="{Binding KelvinValue, Mode=TwoWay}"/>
-				<Run Text=" K"/>
-			</TextBlock>
+			<Grid Grid.Row="2" Visibility="{Binding IsRadioButtonUseTannerHellandAlgorithmChecked, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,5,0,0">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="18"/>
+				</Grid.RowDefinitions>
+				
+				<TextBlock Grid.Row="0" Margin="0,0,0,5">
+					<Run Text="Temperature: "/>
+					<Run Text="{Binding KelvinValue, Mode=TwoWay}"/>
+					<Run Text=" K"/>
+				</TextBlock>
 
-			<Slider Grid.Row="3" Minimum="2000" Maximum="6600" Interval="10" Value="{Binding KelvinValue, Mode=TwoWay}"/>
+				<Slider IsMoveToPointEnabled="True" Grid.Row="1" Minimum="2000" Maximum="6600" Interval="10" Value="{Binding KelvinValue, Mode=TwoWay}"/>
+			</Grid>
+			<Grid Grid.Row="2" Visibility="{Binding IsRadioButtonUseImageChecked, Converter={StaticResource BoolToVisibilityConverter}}"  Margin="0,5,0,0">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="18"/>
+					<RowDefinition Height="Auto"/>
+				</Grid.RowDefinitions>
 
-			<GroupBox Grid.Row="4" Header="Configurations">
+				<Image Grid.Row="0" Stretch="Fill" Source="{Binding ImageGradient}"/>
+				<Slider Grid.Row="0" IsMoveToPointEnabled="True" Minimum="0" Maximum="1000" Interval="10" Value="{Binding ImageSliderValue, Mode=TwoWay}"/>
+
+				<xctk:ColorPicker  Grid.Row="1" UsingAlphaChannel="False" HorizontalAlignment="Left" Width="40" SelectedColor="{Binding SelectedColor}" Margin="0,5,0,0"/>
+			</Grid>
+
+
+
+			<GroupBox Grid.Row="3" Header="Configurations" Margin="0,5,0,0">
 				<Grid Margin="0,5,0,0">
 					<Grid.RowDefinitions>
 						<RowDefinition Height="Auto"/>
@@ -89,13 +111,13 @@
 					</StackPanel>
 					
 				   <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,0">
-					   <CheckBox Margin="0,0,5,0" IsChecked="{Binding IsCheckedStartAtSystemStartup}"/>
+					   <CheckBox Margin="0,0,5,0" IsChecked="{Binding IsCheckboxStartAtSystemStartupChecked}"/>
 					   <TextBlock Text="Start application on system startup"/>
 					</StackPanel>
 				</Grid>
 			</GroupBox>
 
-			<TextBlock Grid.Row="5" HorizontalAlignment="Right">Version 1</TextBlock>
+			<TextBlock Grid.Row="4" HorizontalAlignment="Right">Version 2</TextBlock>
 		</Grid>
 		<Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Background="White" Visibility="{Binding IsWaitingForKeyInput, Converter={StaticResource BoolToVisibilityConverter}}">
 			<StackPanel VerticalAlignment="Center">
@@ -106,3 +128,6 @@
 		</Grid>
 	</Grid>
 </Window>
+
+
+

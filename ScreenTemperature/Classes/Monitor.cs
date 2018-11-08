@@ -7,7 +7,7 @@ namespace ScreenTemperature.Classes
     public class Monitor : INotifyPropertyChanged
     {
         private string _name;
-        private short[] _rgb;
+        private ushort[] _rgb;
 
         public string Name
         {
@@ -22,7 +22,7 @@ namespace ScreenTemperature.Classes
             }
         }
 
-        public short[] Rgb
+        public ushort[] Rgb
         {
             get { return _rgb; }
             set
