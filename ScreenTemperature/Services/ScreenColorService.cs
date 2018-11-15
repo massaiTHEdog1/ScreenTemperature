@@ -35,10 +35,10 @@ namespace ScreenTemperature.Services
 		#region DLLs
 
 		[DllImport("GDI32.dll")]
-		private static extern unsafe bool SetDeviceGammaRamp(Int32 hdc, void* ramp);
+		private static extern unsafe bool SetDeviceGammaRamp(int hdc, void* ramp);
 
 		[DllImport("GDI32.dll")]
-		private static extern unsafe bool GetDeviceGammaRamp(Int32 hdc, void* ramp);
+		private static extern unsafe bool GetDeviceGammaRamp(int hdc, void* ramp);
 
 		#endregion
 
@@ -61,7 +61,7 @@ namespace ScreenTemperature.Services
 		public unsafe void ChangeScreenColorFromKelvin(int value, Monitor monitor)
 		{
 			float kelvin = value;
-			float temperature = kelvin / 100;
+			var temperature = kelvin / 100;
 
 			float red, green, blue;
 
@@ -129,7 +129,7 @@ namespace ScreenTemperature.Services
 
 			ushort* gArray = stackalloc ushort[3 * 256];
 
-			for (int ik = 0; ik < 256; ik++)
+			for (var ik = 0; ik < 256; ik++)
 			{
 				gArray[ik] = (ushort)(ik * red);
 				gArray[256 + ik] = (ushort)(ik * green);
@@ -146,14 +146,14 @@ namespace ScreenTemperature.Services
 		{
 			ushort* gArray = stackalloc ushort[3 * 256];
 
-			foreach (Monitor monitor in _monitorService.GetMonitors())
+			foreach (var monitor in _monitorService.GetMonitors())
 			{
 				ChangeScreenColorFromKelvin(6600, monitor);
 			}
 
-			foreach(Monitor monitor in config.Monitors)
+			foreach(var monitor in config.Monitors)
 			{
-				for (int i = 0; i < 256 * 3; i++)
+				for (var i = 0; i < 256 * 3; i++)
 				{
 					gArray[i] = monitor.Rgb[i];
 				}
@@ -165,9 +165,10 @@ namespace ScreenTemperature.Services
 		public unsafe Config SaveCurrentScreenColorToConfig(string configName)
 		{
 			List<Config> configs = _configService.GetConfigs();
-			Config configToModify = configs.FirstOrDefault(x => x.ConfigName == configName);
+			var configToModify = configs.FirstOrDefault(x => x.ConfigName == configName);
 
-			if (configToModify == null) //If the config doesn't exist
+			//If the config doesn't exist
+			if (configToModify == null) 
 			{
 				configToModify = new Config()
 				{
@@ -176,7 +177,8 @@ namespace ScreenTemperature.Services
 					Order = configs.Count
 				};
 			}
-			else //If the config already exists
+			//If the config already exists
+			else
 			{
 				if (MessageBox.Show($"Are you sure you want to erase this config: {configName}?", "", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
 				{
@@ -190,17 +192,19 @@ namespace ScreenTemperature.Services
 
 			List<Monitor> monitors = _monitorService.GetMonitorsExceptAllMonitorsInOne();
 
-			foreach (Monitor monitor in monitors)
+			foreach (var monitor in monitors)
 			{
 				ushort* gArray = stackalloc ushort[3 * 256];
 
-				bool retVal = GetDeviceGammaRamp(monitor.Hdc.ToInt32(), gArray); //Get screen data
+				//Get screen data
+				var retVal = GetDeviceGammaRamp(monitor.Hdc.ToInt32(), gArray);
 
-				if (retVal) //If it' ok
+				//If it' ok
+				if (retVal) 
 				{
 					List<ushort> rgb = new List<ushort>();
 
-					for (int i = 0; i < 256 * 3; i++)
+					for (var i = 0; i < 256 * 3; i++)
 					{
 						rgb.Add(gArray[i]);
 					}
@@ -229,13 +233,13 @@ namespace ScreenTemperature.Services
 		{
 			float red, green, blue;
 
-			using (MemoryStream outStream = new MemoryStream())
+			using (var outStream = new MemoryStream())
 			{
 				BitmapEncoder enc = new BmpBitmapEncoder();
 				enc.Frames.Add(BitmapFrame.Create(image));
 				enc.Save(outStream);
 
-				using (Bitmap bmp = new Bitmap(outStream))
+				using (var bmp = new Bitmap(outStream))
 				{
 					if (value < 0)
 						value = 0;
@@ -243,7 +247,7 @@ namespace ScreenTemperature.Services
 						value = bmp.Width - 1;
 
 
-					Color clr = bmp.GetPixel(value, 0);
+					var clr = bmp.GetPixel(value, 0);
 
 					red = clr.R;
 					green = clr.G;
@@ -253,7 +257,7 @@ namespace ScreenTemperature.Services
 
 			ushort* gArray = stackalloc ushort[3 * 256];
 
-			for (int ik = 0; ik < 256; ik++)
+			for (var ik = 0; ik < 256; ik++)
 			{
 				gArray[ik] = (ushort)(ik * red);
 				gArray[256 + ik] = (ushort)(ik * green);

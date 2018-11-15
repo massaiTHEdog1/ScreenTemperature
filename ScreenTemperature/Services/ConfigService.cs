@@ -66,7 +66,7 @@ namespace ScreenTemperature.Services
             {
                 _listConfigs = new List<Config>();
 
-                foreach (string file in Directory.GetFiles(_configDirectory, "*.bin"))
+                foreach (var file in Directory.GetFiles(_configDirectory, "*.bin"))
                 {
                     try
                     {
@@ -102,19 +102,19 @@ namespace ScreenTemperature.Services
         /// </summary>
         public Config SaveConfig(Config config)
         {
-            bool addConfigToList = false;
+            var addConfigToList = false;
 
             if (string.IsNullOrEmpty(config.ConfigPath))//if this config doesn't exist
             {
-                int i = 0;
+                var i = 0;
 
                 while (true)
                 {
                     if (!File.Exists($@"{_configDirectory}\config{i}.bin"))
                     {
-                        using (FileStream fichier = File.Create($@"{_configDirectory}\config{i}.bin"))
+                        using (var fs = File.Create($@"{_configDirectory}\config{i}.bin"))
                         {
-                            fichier.Close();
+                            fs.Close();
                         }
 
                         config.ConfigPath = $@"{_configDirectory}\config{i}.bin";

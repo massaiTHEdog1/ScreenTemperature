@@ -4,7 +4,7 @@ using System.ComponentModel;
 
 namespace ScreenTemperature.Classes
 {
-	[Serializable]
+    [Serializable]
     public class Config : INotifyPropertyChanged
     {
         #region Variables
@@ -12,16 +12,16 @@ namespace ScreenTemperature.Classes
         private string _configName;
         private int _order;
         private string _configPath;
-	    private KeyData _keyBinding;
+        private KeyData _keyBinding;
         private List<Monitor> _monitors;
 
-	    #endregion;
+        #endregion
 
-        #region Propriétés
+        #region Properties
 
         public string ConfigName
         {
-            get { return _configName; }
+            get => _configName;
             set
             {
                 _configName = value;
@@ -31,7 +31,7 @@ namespace ScreenTemperature.Classes
 
         public int Order
         {
-            get { return _order; }
+            get => _order;
             set
             {
                 _order = value;
@@ -41,7 +41,7 @@ namespace ScreenTemperature.Classes
 
         public string ConfigPath
         {
-            get { return _configPath; }
+            get => _configPath;
             set
             {
                 _configPath = value;
@@ -49,19 +49,19 @@ namespace ScreenTemperature.Classes
             }
         }
 
-	    public KeyData KeyBinding
-	    {
-		    get { return _keyBinding; }
-		    set
-		    {
-			    _keyBinding = value;
-			    NotifyPropertyChanged("KeyBinding");
-		    }
-	    }
+        public KeyData KeyBinding
+        {
+            get => _keyBinding;
+            set
+            {
+                _keyBinding = value;
+                NotifyPropertyChanged("KeyBinding");
+            }
+        }
 
         public List<Monitor> Monitors
         {
-            get { return _monitors; }
+            get => _monitors;
             set
             {
                 _monitors = value;
@@ -71,19 +71,16 @@ namespace ScreenTemperature.Classes
 
         #endregion
 
-        #region Méthodes
+        #region Methods
 
-        #region Implémentation INotifyPropertyChanged
+        #region Implementation INotifyPropertyChanged
 
         //INotifyPropertyChanged implementation
-        [field:NonSerialized]
+        [field: NonSerialized]
         public event PropertyChangedEventHandler PropertyChanged;
-        private void NotifyPropertyChanged(String propertyName)
+        private void NotifyPropertyChanged(string propertyName)
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         #endregion
