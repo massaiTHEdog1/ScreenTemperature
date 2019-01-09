@@ -57,16 +57,17 @@ namespace ScreenTemperature
 		#region Commands
 
 		public ICommand AssignKeyToConfigCommand { get; private set; }
-			public ICommand SaveConfigCommand { get; private set; }
-			public ICommand DeleteConfigCommand { get; private set; }
-			public ICommand MoveConfigUpCommand { get; private set; }
-			public ICommand MoveConfigDownCommand { get; private set; } 
+		public ICommand SaveConfigCommand { get; private set; }
+		public ICommand DeleteConfigCommand { get; private set; }
+		public ICommand MoveConfigUpCommand { get; private set; }
+		public ICommand MoveConfigDownCommand { get; private set; } 
+        public ICommand RefreshMonitorsCommand { get; private set; }
 
-		#endregion
+        #endregion
 
-		#region Services
+        #region Services
 
-		private readonly IConfigService _configService;
+        private readonly IConfigService _configService;
 		private readonly IScreenColorService _temperatureService;
 		// ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
 		private readonly IMonitorService _monitorService;
@@ -382,8 +383,10 @@ namespace ScreenTemperature
 			DeleteConfigCommand = new RelayCommand(DeleteConfig);
 			MoveConfigUpCommand = new RelayCommand(MoveConfigUp);
 			MoveConfigDownCommand = new RelayCommand(MoveConfigDown);
+		    RefreshMonitorsCommand = new RelayCommand(RefreshMonitors);
 
-			_notifyIcon.Icon = Properties.Resources.icon;
+
+            _notifyIcon.Icon = Properties.Resources.icon;
 			_notifyIcon.Click += NotifyIconOnClick;
 			_notifyIcon.Visible = true;
 
@@ -703,6 +706,12 @@ namespace ScreenTemperature
 				Configs.RemoveAt(SelectedConfigIndex);
 				SelectedConfigIndex = 0;
 			}
+		}
+
+		private void RefreshMonitors(object o)
+		{
+			Monitors = new ObservableCollection<Monitor>(_monitorService.GetMonitors(true));
+			SelectedMonitor = Monitors.FirstOrDefault();
 		}
 
 		#endregion

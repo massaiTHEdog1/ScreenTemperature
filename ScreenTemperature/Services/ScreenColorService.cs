@@ -158,7 +158,7 @@ namespace ScreenTemperature.Services
 					gArray[i] = monitor.Rgb[i];
 				}
 
-				SetDeviceGammaRamp(_monitorService.GetHdcByMonitorName(monitor.Name).ToInt32(), gArray);
+				SetDeviceGammaRamp(_monitorService.GetHdcByMonitorIndex(monitor.Index).ToInt32(), gArray);
 			}
 		}
 

@@ -26,7 +26,10 @@
 				<RowDefinition Height="Auto"/>
 			</Grid.RowDefinitions>
 
-			<ComboBox Grid.Row="0" Width="100" HorizontalAlignment="Left" ItemsSource="{Binding Monitors}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"/>
+            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                <ComboBox Width="100" HorizontalAlignment="Left" ItemsSource="{Binding Monitors}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"/>
+                <Button Content="Refresh" Command="{Binding RefreshMonitorsCommand}"/>
+            </StackPanel>
 
 			<StackPanel Grid.Row="1" Margin="0,10,0,0">
 				<RadioButton GroupName="Algorithm" Content="Use Tanner Helland's algorithm" IsChecked="{Binding IsRadioButtonUseTannerHellandAlgorithmChecked}"/>
@@ -117,7 +120,7 @@
 				</Grid>
 			</GroupBox>
 
-			<TextBlock Grid.Row="4" HorizontalAlignment="Right">Version 2</TextBlock>
+			<TextBlock Grid.Row="4" HorizontalAlignment="Right">Version 3</TextBlock>
 		</Grid>
 		<Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Background="White" Visibility="{Binding IsWaitingForKeyInput, Converter={StaticResource BoolToVisibilityConverter}}">
 			<StackPanel VerticalAlignment="Center">

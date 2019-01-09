@@ -6,9 +6,9 @@ namespace ScreenTemperature.Services.Interfaces
 {
     interface IMonitorService
     {
-        List<Monitor> GetMonitors();
+        List<Monitor> GetMonitors(bool refresh = false);
         Monitor GetAllMonitorsInOne();
         List<Monitor> GetMonitorsExceptAllMonitorsInOne();
-        IntPtr GetHdcByMonitorName(string monitorName);
+        IntPtr GetHdcByMonitorIndex(int monitorIndex);
     }
 }

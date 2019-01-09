@@ -7,6 +7,7 @@ namespace ScreenTemperature.Classes
     public class Monitor : INotifyPropertyChanged
     {
         private string _name;
+        private int _index;
         private ushort[] _rgb;
 
         public string Name
@@ -19,6 +20,19 @@ namespace ScreenTemperature.Classes
             {
                 _name = value;
                 NotifyPropertyChanged("Name");
+            }
+        }
+
+        public int Index
+        {
+            get
+            {
+                return _index;
+            }
+            set
+            {
+                _index = value;
+                NotifyPropertyChanged("Index");
             }
         }
 

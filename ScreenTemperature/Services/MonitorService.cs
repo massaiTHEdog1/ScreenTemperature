@@ -34,9 +34,9 @@ namespace ScreenTemperature.Services
 
         #region Methods
 
-        public List<Monitor> GetMonitors()
+        public List<Monitor> GetMonitors(bool refresh = false)
         {
-            if (_monitors == null)
+            if (_monitors == null || refresh)
             {
                 _monitors = new List<Monitor>();
 
@@ -45,16 +45,18 @@ namespace ScreenTemperature.Services
                 _monitors.Add(new Monitor()
                 {
                     Name = "All screens",
+                    Index = 0,
                     Hdc = hdc
                 });
 
-                foreach (Screen screen in Screen.AllScreens)
+                for (int i = 0; i < Screen.AllScreens.Length; i++)
                 {
-                    hdc = CreateDC(screen.DeviceName, null, null, IntPtr.Zero);
+                    hdc = CreateDC(Screen.AllScreens[i].DeviceName, null, null, IntPtr.Zero);
 
                     _monitors.Add(new Monitor()
                     {
-                        Name = screen.DeviceName,
+                        Name = "Screen " + (i+1),
+                        Index = i+1,
                         Hdc = hdc
                     });
                 }
@@ -73,9 +75,9 @@ namespace ScreenTemperature.Services
             return GetMonitors().Skip(1).ToList();
         }
 
-        public IntPtr GetHdcByMonitorName(string monitorName)
+        public IntPtr GetHdcByMonitorIndex(int monitorIndex)
         {
-            Monitor monitor = GetMonitors().FirstOrDefault(x => x.Name == monitorName);
+            Monitor monitor = GetMonitors().FirstOrDefault(x => x.Index == monitorIndex);
 
             if (monitor == null)
             {
