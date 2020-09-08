@@ -19,7 +19,7 @@ namespace ScreenTemperature.Services
         #region DLLs
 
         [DllImport("gdi32.dll")]
-        static extern IntPtr CreateDC(string lpszDriver, string lpszDevice, string lpszOutput, IntPtr lpInitData);
+        private static extern IntPtr CreateDC(string lpszDriver, string lpszDevice, string lpszOutput, IntPtr lpInitData);
 
         #endregion
 
@@ -40,7 +40,7 @@ namespace ScreenTemperature.Services
             {
                 _monitors = new List<Monitor>();
 
-                IntPtr hdc = CreateDC("DISPLAY", null, null, IntPtr.Zero);
+                var hdc = CreateDC("DISPLAY", null, null, IntPtr.Zero);
 
                 _monitors.Add(new Monitor()
                 {
@@ -77,16 +77,9 @@ namespace ScreenTemperature.Services
 
         public IntPtr GetHdcByMonitorIndex(int monitorIndex)
         {
-            Monitor monitor = GetMonitors().FirstOrDefault(x => x.Index == monitorIndex);
+            var monitor = GetMonitors().FirstOrDefault(x => x.Index == monitorIndex);
 
-            if (monitor == null)
-            {
-                return IntPtr.Zero;
-            }
-            else
-            {
-                return monitor.Hdc;
-            }
+            return monitor?.Hdc ?? IntPtr.Zero;
         }
 
         #endregion

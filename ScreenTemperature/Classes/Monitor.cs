@@ -6,16 +6,19 @@ namespace ScreenTemperature.Classes
     [Serializable]
     public class Monitor : INotifyPropertyChanged
     {
+        #region Variables
+
         private string _name;
         private int _index;
         private ushort[] _rgb;
 
+        #endregion
+
+        #region Properties
+
         public string Name
         {
-            get
-            {
-                return _name;
-            }
+            get => _name;
             set
             {
                 _name = value;
@@ -38,13 +41,15 @@ namespace ScreenTemperature.Classes
 
         public ushort[] Rgb
         {
-            get { return _rgb; }
+            get => _rgb;
             set
             {
                 _rgb = value;
                 NotifyPropertyChanged("Rgb");
             }
         }
+
+        #endregion
 
         [field: NonSerialized]
         public IntPtr Hdc;
@@ -54,12 +59,9 @@ namespace ScreenTemperature.Classes
         //INotifyPropertyChanged implementation
         [field: NonSerialized]
         public event PropertyChangedEventHandler PropertyChanged;
-        private void NotifyPropertyChanged(String propertyName)
+        private void NotifyPropertyChanged(string propertyName)
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         #endregion

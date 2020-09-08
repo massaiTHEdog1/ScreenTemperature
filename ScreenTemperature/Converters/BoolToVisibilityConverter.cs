@@ -9,9 +9,9 @@ namespace ScreenTemperature.Converters
 	{
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			bool v = (bool)value;
+			var v = value != null && (bool)value;
 
-			if(v == true)
+			if(v)
 			{
 				return Visibility.Visible;
 			}
