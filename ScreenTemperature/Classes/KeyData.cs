@@ -7,14 +7,20 @@ namespace ScreenTemperature.Classes
 	[Serializable]
 	public class KeyData : INotifyPropertyChanged
 	{
+		#region Variables
+
 		private Key _key;
 		private bool _alt;
 		private bool _shift;
 		private bool _control;
 
+		#endregion
+
+		#region Properties
+
 		public bool Alt
 		{
-			get { return _alt; }
+			get => _alt;
 			set
 			{
 				_alt = value;
@@ -24,7 +30,7 @@ namespace ScreenTemperature.Classes
 
 		public bool Shift
 		{
-			get { return _shift; }
+			get => _shift;
 			set
 			{
 				_shift = value;
@@ -34,7 +40,7 @@ namespace ScreenTemperature.Classes
 
 		public bool Control
 		{
-			get { return _control; }
+			get => _control;
 			set
 			{
 				_control = value;
@@ -44,15 +50,15 @@ namespace ScreenTemperature.Classes
 
 		public Key Key
 		{
-			get { return _key; }
+			get => _key;
 			set
 			{
 				_key = value;
 				NotifyPropertyChanged("Key");
 			}
 		}
+		#endregion
 		
-
 		public KeyData(Key key, bool shift, bool alt, bool control)
 		{
 			_key = key;
@@ -63,7 +69,7 @@ namespace ScreenTemperature.Classes
 
 		public override string ToString()
 		{
-			string text = "";
+			var text = string.Empty;
 			text += Shift ? "Shift + " : "";
 			text += Control ? "Ctrl + " : "";
 			text += Alt ? "Alt + " : "";
@@ -76,12 +82,9 @@ namespace ScreenTemperature.Classes
 		//INotifyPropertyChanged implementation
 		[field:NonSerialized]
 		public event PropertyChangedEventHandler PropertyChanged;
-		private void NotifyPropertyChanged(String propertyName)
+		private void NotifyPropertyChanged(string propertyName)
 		{
-			if (PropertyChanged != null)
-			{
-				PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-			}
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 		}
 
 		#endregion
