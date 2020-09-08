@@ -24,7 +24,7 @@ namespace ScreenTemperature.Classes
 			set
 			{
 				_alt = value;
-				NotifyPropertyChanged("Alt");
+				NotifyPropertyChanged(nameof(Alt));
 			}
 		}
 
@@ -34,7 +34,7 @@ namespace ScreenTemperature.Classes
 			set
 			{
 				_shift = value;
-				NotifyPropertyChanged("Shift");
+				NotifyPropertyChanged(nameof(Shift));
 			}
 		}
 
@@ -44,7 +44,7 @@ namespace ScreenTemperature.Classes
 			set
 			{
 				_control = value;
-				NotifyPropertyChanged("Control");
+				NotifyPropertyChanged(nameof(Control));
 			}
 		}
 
@@ -54,9 +54,10 @@ namespace ScreenTemperature.Classes
 			set
 			{
 				_key = value;
-				NotifyPropertyChanged("Key");
+				NotifyPropertyChanged(nameof(Key));
 			}
 		}
+
 		#endregion
 		
 		public KeyData(Key key, bool shift, bool alt, bool control)

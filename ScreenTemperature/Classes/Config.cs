@@ -25,7 +25,7 @@ namespace ScreenTemperature.Classes
             set
             {
                 _configName = value;
-                NotifyPropertyChanged("Libelle");
+                NotifyPropertyChanged(nameof(ConfigName));
             }
         }
 
@@ -35,7 +35,7 @@ namespace ScreenTemperature.Classes
             set
             {
                 _order = value;
-                NotifyPropertyChanged("Order");
+                NotifyPropertyChanged(nameof(Order));
             }
         }
 
@@ -45,7 +45,7 @@ namespace ScreenTemperature.Classes
             set
             {
                 _configPath = value;
-                NotifyPropertyChanged("ConfigPath");
+                NotifyPropertyChanged(nameof(ConfigPath));
             }
         }
 
@@ -55,7 +55,7 @@ namespace ScreenTemperature.Classes
             set
             {
                 _keyBinding = value;
-                NotifyPropertyChanged("KeyBinding");
+                NotifyPropertyChanged(nameof(KeyBinding));
             }
         }
 
@@ -65,7 +65,7 @@ namespace ScreenTemperature.Classes
             set
             {
                 _monitors = value;
-                NotifyPropertyChanged("Monitor");
+                NotifyPropertyChanged(nameof(Monitors));
             }
         }
 

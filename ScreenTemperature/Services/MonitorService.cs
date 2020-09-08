@@ -8,80 +8,61 @@ using ScreenTemperature.Services.Interfaces;
 
 namespace ScreenTemperature.Services
 {
-    class MonitorService : IMonitorService
-    {
-        #region Variables
+	class MonitorService : IMonitorService
+	{
+		#region Variables
 
-        private List<Monitor> _monitors;
+		private List<Monitor> _monitors;
 
-        #endregion
+		#endregion
 
-        #region DLLs
+		#region DLLs
 
-        [DllImport("gdi32.dll")]
-        private static extern IntPtr CreateDC(string lpszDriver, string lpszDevice, string lpszOutput, IntPtr lpInitData);
+		[DllImport("gdi32.dll")]
+		private static extern IntPtr CreateDC(string lpszDriver, string lpszDevice, string lpszOutput, IntPtr lpInitData);
 
-        #endregion
+		#endregion
 
-        #region Constructor
+		#region Constructor
 
-        //public MonitorService()
-        //{
+		//public MonitorService()
+		//{
 
-        //}
+		//}
 
-        #endregion
+		#endregion
 
-        #region Methods
+		#region Methods
 
-        public List<Monitor> GetMonitors(bool refresh = false)
-        {
-            if (_monitors == null || refresh)
-            {
-                _monitors = new List<Monitor>();
+		public List<Monitor> GetMonitors(bool refresh = false)
+		{
+			if (_monitors == null || refresh)
+			{
+				_monitors = new List<Monitor>();
 
-                var hdc = CreateDC("DISPLAY", null, null, IntPtr.Zero);
+				for (int i = 0; i < Screen.AllScreens.Length; i++)
+				{
+					var hdc = CreateDC(Screen.AllScreens[i].DeviceName, null, null, IntPtr.Zero);
 
-                _monitors.Add(new Monitor()
-                {
-                    Name = "All screens",
-                    Index = 0,
-                    Hdc = hdc
-                });
+					_monitors.Add(new Monitor()
+					{
+						DeviceName = Screen.AllScreens[i].DeviceName,
+						Label = "Screen " + (i + 1),
+						Hdc = hdc
+					});
+				}
+			}
 
-                for (int i = 0; i < Screen.AllScreens.Length; i++)
-                {
-                    hdc = CreateDC(Screen.AllScreens[i].DeviceName, null, null, IntPtr.Zero);
+			return _monitors;
+		}
 
-                    _monitors.Add(new Monitor()
-                    {
-                        Name = "Screen " + (i+1),
-                        Index = i+1,
-                        Hdc = hdc
-                    });
-                }
-            }
+		public IntPtr GetHdcByMonitorName(string name)
+		{
+			var monitor = GetMonitors().FirstOrDefault(x => x.DeviceName == name);
 
-            return _monitors;
-        }
+			return monitor?.Hdc ?? IntPtr.Zero;
+		}
 
-        public Monitor GetAllMonitorsInOne()
-        {
-            return GetMonitors()[0];
-        }
-
-        public List<Monitor> GetMonitorsExceptAllMonitorsInOne()
-        {
-            return GetMonitors().Skip(1).ToList();
-        }
-
-        public IntPtr GetHdcByMonitorIndex(int monitorIndex)
-        {
-            var monitor = GetMonitors().FirstOrDefault(x => x.Index == monitorIndex);
-
-            return monitor?.Hdc ?? IntPtr.Zero;
-        }
-
-        #endregion
-    }
+		#endregion
+	}
 }

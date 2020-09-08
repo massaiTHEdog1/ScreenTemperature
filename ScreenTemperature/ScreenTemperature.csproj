@@ -111,6 +111,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Classes\Monitor.cs" />
+    <Compile Include="Enums\AlgorithmType.cs" />
     <Compile Include="Services\ConfigService.cs" />
     <Compile Include="Services\Interfaces\IConfigService.cs" />
     <Compile Include="Services\Interfaces\IMonitorService.cs" />

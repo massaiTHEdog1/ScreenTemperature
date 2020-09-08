@@ -1,5 +1,7 @@
-﻿using System;
+﻿using ScreenTemperature.Enums;
+using System;
 using System.ComponentModel;
+using System.Windows.Media;
 
 namespace ScreenTemperature.Classes
 {
@@ -8,44 +10,74 @@ namespace ScreenTemperature.Classes
     {
         #region Variables
 
-        private string _name;
-        private int _index;
-        private ushort[] _rgb;
+        private string _label;
+        private string _deviceName;
+        private AlgorithmType _algorithmType;
+        private int _tannerHellandSliderValue;
+        private Color _customColorColorValue;
+        private int _customColorSliderValue;
 
         #endregion
 
         #region Properties
 
-        public string Name
+        public string Label
         {
-            get => _name;
+            get => _label;
             set
             {
-                _name = value;
-                NotifyPropertyChanged("Name");
+                _label = value;
+                NotifyPropertyChanged(nameof(Label));
             }
         }
 
-        public int Index
+        public string DeviceName
         {
-            get
-            {
-                return _index;
-            }
+            get => _deviceName;
             set
             {
-                _index = value;
-                NotifyPropertyChanged("Index");
+                _deviceName = value;
+                NotifyPropertyChanged(nameof(DeviceName));
             }
         }
 
-        public ushort[] Rgb
+        public AlgorithmType AlgorithmType
         {
-            get => _rgb;
+            get => _algorithmType;
             set
             {
-                _rgb = value;
-                NotifyPropertyChanged("Rgb");
+                _algorithmType = value;
+                NotifyPropertyChanged(nameof(AlgorithmType));
+            }
+        }
+
+        public int TannerHellandSliderValue
+        {
+            get => _tannerHellandSliderValue;
+            set
+            {
+                _tannerHellandSliderValue = value;
+                NotifyPropertyChanged(nameof(TannerHellandSliderValue));
+            }
+        }
+
+        public Color CustomColorColorValue
+        {
+            get => _customColorColorValue;
+            set
+            {
+                _customColorColorValue = value;
+                NotifyPropertyChanged(nameof(CustomColorColorValue));
+            }
+        }
+
+        public int CustomColorSliderValue
+        {
+            get => _customColorSliderValue;
+            set
+            {
+                _customColorSliderValue = value;
+                NotifyPropertyChanged(nameof(CustomColorSliderValue));
             }
         }
 

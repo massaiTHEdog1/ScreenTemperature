@@ -158,7 +158,7 @@ namespace ScreenTemperature.Services
 					gArray[i] = monitor.Rgb[i];
 				}
 
-				SetDeviceGammaRamp(_monitorService.GetHdcByMonitorIndex(monitor.Index).ToInt32(), gArray);
+				SetDeviceGammaRamp(_monitorService.GetHdcByMonitorName(monitor.DeviceName).ToInt32(), gArray);
 			}
 		}
 
@@ -190,7 +190,7 @@ namespace ScreenTemperature.Services
 				}
 			}
 
-			List<Monitor> monitors = _monitorService.GetMonitorsExceptAllMonitorsInOne();
+			List<Monitor> monitors = _monitorService.GetMonitors();
 
 			foreach (var monitor in monitors)
 			{
@@ -211,7 +211,7 @@ namespace ScreenTemperature.Services
 
 					configToModify.Monitors.Add(new Monitor()
 					{
-						Name = monitor.Name,
+						Label = monitor.Label,
 						Rgb = rgb.ToArray()
 					});
 				}
