@@ -319,6 +319,11 @@ namespace ScreenTemperature
             }
         }
 
+        public string Version
+        {
+            get => Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        }
+
         #endregion
 
         #region DLLs
