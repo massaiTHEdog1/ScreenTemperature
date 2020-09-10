@@ -1,4 +1,5 @@
-﻿using System.Windows.Media.Imaging;
+﻿using System.Collections.Generic;
+using System.Windows.Media.Imaging;
 using ScreenTemperature.Classes;
 
 namespace ScreenTemperature.Services.Interfaces
@@ -13,12 +14,12 @@ namespace ScreenTemperature.Services.Interfaces
 		/// <summary>
 		/// Changes screen color from a Config
 		/// </summary>
-		void ChangeScreenColorFromConfig(Config config);
+		void ChangeScreenColorFromConfig(Config config, List<Monitor> monitors);
 
 		/// <summary>
 		/// Saves the screen color in a config file
 		/// </summary>
-		Config SaveCurrentScreenColorToConfig(string configName);
+		Config SaveCurrentScreenColorToConfig(string configName, List<Monitor> monitors);
 
 		/// <summary>
 		/// Changes screen color from an image

@@ -28,7 +28,6 @@ namespace ScreenTemperature.Services
 		#region Services
 
 		private readonly IConfigService _configService;
-		private readonly IMonitorService _monitorService;
 
 		#endregion
 
@@ -44,10 +43,9 @@ namespace ScreenTemperature.Services
 
 		#region Constructor
 
-		public ScreenColorService(IConfigService configService, IMonitorService monitorService)
+		public ScreenColorService(IConfigService configService)
 		{
 			_configService = configService;
-			_monitorService = monitorService;
 		}
 
 		#endregion
@@ -142,11 +140,11 @@ namespace ScreenTemperature.Services
 		/// <summary>
 		/// Changes screen color from a Config
 		/// </summary>
-		public unsafe void ChangeScreenColorFromConfig(Config config)
+		public unsafe void ChangeScreenColorFromConfig(Config config, List<Monitor> monitors)
 		{
 			ushort* gArray = stackalloc ushort[3 * 256];
 
-			foreach (var monitor in _monitorService.GetMonitors())
+			foreach (var monitor in monitors)
 			{
 				ChangeScreenColorFromKelvin(6600, monitor);
 			}
@@ -155,14 +153,14 @@ namespace ScreenTemperature.Services
 			{
 				for (var i = 0; i < 256 * 3; i++)
 				{
-					gArray[i] = monitor.Rgb[i];
+					//gArray[i] = monitor.Rgb[i];
 				}
 
-				SetDeviceGammaRamp(_monitorService.GetHdcByMonitorName(monitor.DeviceName).ToInt32(), gArray);
+				SetDeviceGammaRamp(monitor.Hdc.ToInt32(), gArray);
 			}
 		}
 
-		public unsafe Config SaveCurrentScreenColorToConfig(string configName)
+		public unsafe Config SaveCurrentScreenColorToConfig(string configName, List<Monitor> monitors)
 		{
 			List<Config> configs = _configService.GetConfigs();
 			var configToModify = configs.FirstOrDefault(x => x.ConfigName == configName);
@@ -190,8 +188,6 @@ namespace ScreenTemperature.Services
 				}
 			}
 
-			List<Monitor> monitors = _monitorService.GetMonitors();
-
 			foreach (var monitor in monitors)
 			{
 				ushort* gArray = stackalloc ushort[3 * 256];
@@ -212,7 +208,7 @@ namespace ScreenTemperature.Services
 					configToModify.Monitors.Add(new Monitor()
 					{
 						Label = monitor.Label,
-						Rgb = rgb.ToArray()
+						//Rgb = rgb.ToArray()
 					});
 				}
 				else

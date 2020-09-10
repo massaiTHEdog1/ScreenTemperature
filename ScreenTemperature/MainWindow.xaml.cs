@@ -23,6 +23,7 @@ using Container = SimpleInjector.Container;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MessageBox = System.Windows.MessageBox;
 using TimeoutException = System.TimeoutException;
+using System.Collections.Generic;
 
 namespace ScreenTemperature
 {
@@ -41,7 +42,7 @@ namespace ScreenTemperature
 		private IntPtr _windowHandle;
 		private int _kelvinValue = 6600;
 		private ObservableCollection<Config> _configs;
-		private ObservableCollection<Monitor> _monitors;
+		private List<Monitor> _monitors;
 		private int _selectedConfigIndex;
 		private Config _selectedConfig;
 		private Monitor _selectedMonitor;
@@ -61,7 +62,6 @@ namespace ScreenTemperature
 		public ICommand DeleteConfigCommand { get; private set; }
 		public ICommand MoveConfigUpCommand { get; private set; }
 		public ICommand MoveConfigDownCommand { get; private set; }
-		public ICommand RefreshMonitorsCommand { get; private set; }
 
 		#endregion
 
@@ -69,8 +69,6 @@ namespace ScreenTemperature
 
 		private readonly IConfigService _configService;
 		private readonly IScreenColorService _temperatureService;
-		// ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-		private readonly IMonitorService _monitorService;
 
 		#endregion
 
@@ -134,7 +132,7 @@ namespace ScreenTemperature
 				if (value != null)
 				{
 					TextNameConfig = value.ConfigName;
-					_temperatureService.ChangeScreenColorFromConfig(value);
+					_temperatureService.ChangeScreenColorFromConfig(value, Monitors);
 				}
 				else
 				{
@@ -146,7 +144,7 @@ namespace ScreenTemperature
 		/// <summary>
 		/// List of available monitors
 		/// </summary>
-		public ObservableCollection<Monitor> Monitors
+		public List<Monitor> Monitors
 		{
 			get => _monitors;
 			set
@@ -334,6 +332,9 @@ namespace ScreenTemperature
 		[DllImport("User32.dll")]
 		private static extern bool UnRegisterHotKey(IntPtr hWnd, int id);
 
+		[DllImport("gdi32.dll")]
+		private static extern IntPtr CreateDC(string lpszDriver, string lpszDevice, string lpszOutput, IntPtr lpInitData);
+
 		#endregion
 
 		#region Constructor
@@ -343,15 +344,10 @@ namespace ScreenTemperature
 			var container = new Container();
 			container.Register<IConfigService, ConfigService>();
 			container.Register<IScreenColorService, ScreenColorService>();
-			container.Register<IMonitorService, MonitorService>();
 			container.Verify();
 
 			_configService = container.GetInstance<IConfigService>();
 			_temperatureService = container.GetInstance<IScreenColorService>();
-			_monitorService = container.GetInstance<IMonitorService>();
-
-			Monitors = new ObservableCollection<Monitor>(_monitorService.GetMonitors());
-			SelectedMonitor = Monitors.FirstOrDefault();
 
 			var exists = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location)).Length > 1;
 
@@ -382,7 +378,6 @@ namespace ScreenTemperature
 			DeleteConfigCommand = new RelayCommand(DeleteConfig);
 			MoveConfigUpCommand = new RelayCommand(MoveConfigUp);
 			MoveConfigDownCommand = new RelayCommand(MoveConfigDown);
-			RefreshMonitorsCommand = new RelayCommand(RefreshMonitors);
 
 			_notifyIcon.Icon = Properties.Resources.icon;
 			_notifyIcon.Click += NotifyIconOnClick;
@@ -415,17 +410,17 @@ namespace ScreenTemperature
 
 		private void SystemEvents_DisplaySettingsChanged(object sender, EventArgs e)
 		{
-			_temperatureService.ChangeScreenColorFromConfig((SelectedConfig));
+			_temperatureService.ChangeScreenColorFromConfig(SelectedConfig, Monitors);
 		}
 
 		private void SystemEvents_PaletteChanged(object sender, EventArgs e)
 		{
-			_temperatureService.ChangeScreenColorFromConfig(SelectedConfig);
+			_temperatureService.ChangeScreenColorFromConfig(SelectedConfig, Monitors);
 		}
 
 		private void SystemEvents_UserPreferenceChanging(object sender, UserPreferenceChangingEventArgs e)
 		{
-			_temperatureService.ChangeScreenColorFromConfig(SelectedConfig);
+			_temperatureService.ChangeScreenColorFromConfig(SelectedConfig, Monitors);
 		}
 
 		/// <summary>
@@ -437,7 +432,7 @@ namespace ScreenTemperature
 		{
 			if (sessionSwitchEventArgs.Reason == SessionSwitchReason.SessionUnlock || sessionSwitchEventArgs.Reason == SessionSwitchReason.SessionLogon)
 			{
-				_temperatureService.ChangeScreenColorFromConfig(SelectedConfig);
+				_temperatureService.ChangeScreenColorFromConfig(SelectedConfig, Monitors);
 			}
 		}
 
@@ -554,6 +549,20 @@ namespace ScreenTemperature
 
 		private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
 		{
+			Monitors = new List<Monitor>();
+
+			for (int i = 0; i < Screen.AllScreens.Length; i++)
+			{
+				var hdc = CreateDC(Screen.AllScreens[i].DeviceName, null, null, IntPtr.Zero);
+
+				Monitors.Add(new Monitor()
+				{
+					DeviceName = Screen.AllScreens[i].DeviceName,
+					Label = "Screen " + (i + 1),
+					Hdc = hdc
+				});
+			}
+
 			IsRadioButtonUseTannerHellandAlgorithmChecked = true;
 
 			SelectedColor = _selectedColor;
@@ -671,7 +680,7 @@ namespace ScreenTemperature
 		{
 			var existingConfig = Configs.FirstOrDefault(x => x.ConfigName == TextNameConfig);//Check if this config alreay exist
 
-			var config = _temperatureService.SaveCurrentScreenColorToConfig(TextNameConfig);
+			var config = _temperatureService.SaveCurrentScreenColorToConfig(TextNameConfig, Monitors);
 
 			if (config != null)
 			{
@@ -704,12 +713,6 @@ namespace ScreenTemperature
 				Configs.RemoveAt(SelectedConfigIndex);
 				SelectedConfigIndex = 0;
 			}
-		}
-
-		private void RefreshMonitors(object o)
-		{
-			Monitors = new ObservableCollection<Monitor>(_monitorService.GetMonitors(true));
-			SelectedMonitor = Monitors.FirstOrDefault();
 		}
 
 		#endregion
