@@ -55,11 +55,12 @@ namespace ScreenTemperature
 		private Color _selectedColor = new Color() { A = 255, R = 255, G = 186, B = 127 };
 		private BitmapImage _imageGradient;
 		private string _configDirectory;
+		private bool _flagIgnoreChanges = true;
 
 		#region Commands
 
 		public ICommand AssignKeyToConfigCommand { get; private set; }
-		public ICommand SaveConfigCommand { get; private set; }
+		public ICommand OnClickButtonSaveConfigCommand { get; private set; }
 		public ICommand DeleteConfigCommand { get; private set; }
 		public ICommand MoveConfigUpCommand { get; private set; }
 		public ICommand MoveConfigDownCommand { get; private set; }
@@ -81,7 +82,9 @@ namespace ScreenTemperature
 				_kelvinValue = value;
 				NotifyPropertyChanged(nameof(KelvinValue));
 
-				ApplyKelvinToMonitor(value, SelectedMonitor);
+				SelectedMonitor.TannerHellandSliderValue = value;
+
+				ApplySelectedMonitor();
 			}
 		}
 
@@ -157,6 +160,24 @@ namespace ScreenTemperature
 			{
 				_selectedMonitor = value;
 				NotifyPropertyChanged(nameof(SelectedMonitor));
+
+				if(value != null && SelectedConfig != null)
+				{
+					var monitor = SelectedConfig.Monitors.FirstOrDefault(x => x.DeviceName == value.DeviceName);
+
+					if(monitor != null)
+					{
+						_flagIgnoreChanges = true;
+
+						KelvinValue = monitor.TannerHellandSliderValue;
+						ImageSliderValue = monitor.CustomColorSliderValue;
+						//SelectedColor = new Color() { }
+						IsRadioButtonUseTannerHellandAlgorithmChecked = monitor.AlgorithmType == Enums.AlgorithmType.TannerHelland;
+						IsRadioButtonUseImageChecked = monitor.AlgorithmType == Enums.AlgorithmType.Custom;
+
+						_flagIgnoreChanges = false;
+					}
+				}
 			}
 		}
 
@@ -241,6 +262,9 @@ namespace ScreenTemperature
 			{
 				_isRadioButtonUseTannerHellandAlgorithmChecked = value;
 				NotifyPropertyChanged(nameof(IsRadioButtonUseTannerHellandAlgorithmChecked));
+
+				if(value)
+					SelectedMonitor.AlgorithmType = Enums.AlgorithmType.TannerHelland;
 			}
 		}
 
@@ -251,6 +275,9 @@ namespace ScreenTemperature
 			{
 				_isRadioButtonUseImageChecked = value;
 				NotifyPropertyChanged(nameof(IsRadioButtonUseImageChecked));
+
+				if(value)
+					SelectedMonitor.AlgorithmType = Enums.AlgorithmType.Custom;
 			}
 		}
 
@@ -265,7 +292,21 @@ namespace ScreenTemperature
 				_imageSliderValue = value;
 				NotifyPropertyChanged(nameof(ImageSliderValue));
 
-				ApplySelectedImageSliderValueToSelectedMonitor();
+				SelectedMonitor.CustomColorSliderValue = value;
+
+				ApplySelectedMonitor();
+			}
+		}
+
+		private void ApplySelectedMonitor()
+		{
+			if(SelectedMonitor.AlgorithmType == Enums.AlgorithmType.Custom)
+			{
+				ApplySelectedImageSliderValueToMonitor(SelectedMonitor);
+			}
+			else if(SelectedMonitor.AlgorithmType == Enums.AlgorithmType.TannerHelland)
+			{
+				ApplyKelvinToMonitor(KelvinValue, SelectedMonitor);
 			}
 		}
 
@@ -297,6 +338,8 @@ namespace ScreenTemperature
 
 					ImageGradient = bitmapImage;
 				}
+
+				SelectedMonitor.CustomColorColorValue = value.ToString();
 			}
 		}
 
@@ -365,7 +408,7 @@ namespace ScreenTemperature
 			}
 
 			AssignKeyToConfigCommand = new RelayCommand(AssignKeyToConfig);
-			SaveConfigCommand = new RelayCommand(SaveConfig);
+			OnClickButtonSaveConfigCommand = new RelayCommand(OnClickButtonSaveConfig);
 			DeleteConfigCommand = new RelayCommand(DeleteConfig);
 			MoveConfigUpCommand = new RelayCommand(MoveConfigUp);
 			MoveConfigDownCommand = new RelayCommand(MoveConfigDown);
@@ -540,18 +583,6 @@ namespace ScreenTemperature
 
 		private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
 		{
-			_configDirectory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\ScreenTemperature\Configs";
-
-			try
-			{
-				Directory.CreateDirectory(_configDirectory);
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show($"Can't create config directory.\r\nTry restarting application.\r\nError:\r\n{ex.Message}", "Error");
-				Environment.Exit(0);
-			}
-
 			#region Load monitors
 
 			Monitors = new List<Monitor>();
@@ -578,6 +609,18 @@ namespace ScreenTemperature
 
 			#region Load configs
 
+			_configDirectory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\ScreenTemperature\Configs";
+
+			try
+			{
+				Directory.CreateDirectory(_configDirectory);
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Can't create config directory.\r\nTry restarting application.\r\nError:\r\n{ex.Message}", "Error");
+				Environment.Exit(0);
+			}
+
 			var configs = new List<Config>();
 
 			foreach (var file in Directory.GetFiles(_configDirectory, "*.bin"))
@@ -602,6 +645,23 @@ namespace ScreenTemperature
 			if (Configs.Count > 0)
 			{
 				SelectedConfig = Configs[0];
+			}
+			else
+			{
+				foreach (var monitor in Monitors)
+				{
+					if (IsRadioButtonUseTannerHellandAlgorithmChecked)
+					{
+						monitor.AlgorithmType = Enums.AlgorithmType.TannerHelland;
+						monitor.TannerHellandSliderValue = KelvinValue;
+					}
+					else if (IsRadioButtonUseImageChecked)
+					{
+						monitor.AlgorithmType = Enums.AlgorithmType.Custom;
+						monitor.CustomColorColorValue = SelectedColor.ToString();
+						monitor.CustomColorSliderValue = ImageSliderValue;
+					}
+				}
 			}
 
 			#endregion
@@ -702,28 +762,35 @@ namespace ScreenTemperature
 			}
 		}
 
-		/// <summary>
-		/// Save the current screen color
-		/// </summary>
-		/// <param name="obj"></param>
-		private void SaveConfig(object obj)
+		
+		private unsafe void OnClickButtonSaveConfig(object obj)
 		{
-			var existingConfig = Configs.FirstOrDefault(x => x.ConfigName == TextNameConfig);//Check if this config already exists
+			var configToModify = Configs.FirstOrDefault(x => x.ConfigName == TextNameConfig);
 
-			var config = SaveCurrentScreenColorToConfig();
-
-			if (config != null)
+			//If the config doesn't exist
+			if (configToModify == null)
 			{
-				if (existingConfig == null)
+				configToModify = new Config()
 				{
-					Configs.Add(config);
+					ConfigName = TextNameConfig == "" ? "config" : TextNameConfig,
+					Monitors = Monitors.Select(x => x.Clone()).ToList(),
+					Order = Configs.Count
+				};
+			}
+			//If the config already exists
+			else
+			{
+				if (MessageBox.Show($"Are you sure you want to erase this config : {TextNameConfig}?", "", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+				{
+					configToModify.Monitors = Monitors.Select(x => x.Clone()).ToList();
 				}
 				else
 				{
-					var index = Configs.IndexOf(existingConfig);
-					Configs[index] = config;
+					return;
 				}
 			}
+
+			SaveConfig(configToModify);
 		}
 
 		private void AssignKeyToConfig(object obj)
@@ -855,71 +922,10 @@ namespace ScreenTemperature
 			SetDeviceGammaRamp(monitor.Hdc.ToInt32(), gArray);
 		}
 
-		private unsafe Config SaveCurrentScreenColorToConfig()
-		{
-			var configToModify = Configs.FirstOrDefault(x => x.ConfigName == TextNameConfig);
-
-			//If the config doesn't exist
-			if (configToModify == null)
-			{
-				configToModify = new Config()
-				{
-					ConfigName = TextNameConfig == "" ? "config" : TextNameConfig,
-					Monitors = new List<Monitor>(),
-					Order = Configs.Count
-				};
-			}
-			//If the config already exists
-			else
-			{
-				if (MessageBox.Show($"Are you sure you want to erase this config : {TextNameConfig}?", "", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
-				{
-					configToModify.Monitors = new List<Monitor>();
-				}
-				else
-				{
-					return null;
-				}
-			}
-
-			foreach (var monitor in Monitors)
-			{
-				ushort* gArray = stackalloc ushort[3 * 256];
-
-				//Get screen data
-				var retVal = GetDeviceGammaRamp(monitor.Hdc.ToInt32(), gArray);
-
-				//If it' ok
-				if (retVal)
-				{
-					List<ushort> rgb = new List<ushort>();
-
-					for (var i = 0; i < 256 * 3; i++)
-					{
-						rgb.Add(gArray[i]);
-					}
-
-					configToModify.Monitors.Add(new Monitor()
-					{
-						Label = monitor.Label,
-						//Rgb = rgb.ToArray()
-					});
-				}
-				else
-				{
-					MessageBox.Show("Can't get screen data. \r\nTry again or restart application.", "Error");
-
-					return null;
-				}
-			}
-
-			return SaveConfig(configToModify);
-		}
-
 		/// <summary>
 		/// Changes screen color from an image
 		/// </summary>
-		private unsafe void ApplySelectedImageSliderValueToSelectedMonitor()
+		private unsafe void ApplySelectedImageSliderValueToMonitor(Monitor monitor)
 		{
 			float red, green, blue;
 
@@ -954,7 +960,7 @@ namespace ScreenTemperature
 				gArray[512 + ik] = (ushort)(ik * blue);
 			}
 
-			SetDeviceGammaRamp(SelectedMonitor.Hdc.ToInt32(), gArray);
+			SetDeviceGammaRamp(monitor.Hdc.ToInt32(), gArray);
 		}
 
 		/// <summary>

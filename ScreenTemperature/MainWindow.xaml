@@ -87,7 +87,7 @@
 						</Grid.ColumnDefinitions>
 
 						<TextBox Grid.Column="0" TextWrapping="NoWrap" VerticalContentAlignment="Center" Text="{Binding TextNameConfig, Mode=TwoWay}"/>
-						<Button Grid.Column="1" Content="Save current screen color" Command="{Binding SaveConfigCommand}"/>
+						<Button Grid.Column="1" Content="Save current screen color" Command="{Binding OnClickButtonSaveConfigCommand}"/>
 					</Grid>
 
 					<Separator Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,5"/>

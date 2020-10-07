@@ -14,7 +14,7 @@ namespace ScreenTemperature.Classes
         private string _deviceName;
         private AlgorithmType _algorithmType;
         private int _tannerHellandSliderValue;
-        private Color _customColorColorValue;
+        private string _customColorColorValue;
         private int _customColorSliderValue;
 
         #endregion
@@ -61,7 +61,7 @@ namespace ScreenTemperature.Classes
             }
         }
 
-        public Color CustomColorColorValue
+        public string CustomColorColorValue
         {
             get => _customColorColorValue;
             set
@@ -97,5 +97,18 @@ namespace ScreenTemperature.Classes
         }
 
         #endregion
+
+        public Monitor Clone()
+        {
+            return new Monitor()
+            {
+                Label = Label,
+                DeviceName = DeviceName,
+                AlgorithmType = AlgorithmType,
+                TannerHellandSliderValue = TannerHellandSliderValue,
+                CustomColorColorValue = CustomColorColorValue,
+                CustomColorSliderValue = CustomColorSliderValue
+            };
+        }
     }
 }
