@@ -108,10 +108,6 @@
     </ApplicationDefinition>
     <Compile Include="Classes\Monitor.cs" />
     <Compile Include="Enums\AlgorithmType.cs" />
-    <Compile Include="Services\ConfigService.cs" />
-    <Compile Include="Services\Interfaces\IConfigService.cs" />
-    <Compile Include="Services\Interfaces\IScreenColorService.cs" />
-    <Compile Include="Services\ScreenColorService.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
