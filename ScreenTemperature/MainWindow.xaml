@@ -45,7 +45,7 @@
 								<Run Text=" K"/>
 							</TextBlock>
 
-							<TextBlock Grid.Row="0" Grid.Column="1" Visibility="{Binding SelectedMonitor.TannerValueIsInvalid, Converter={StaticResource BoolToVisibilityConverter}}" TextAlignment="Right" Foreground="Red" Text="Invalid value"/>
+							<TextBlock Grid.Row="0" Grid.Column="1" Visibility="{Binding SelectedMonitor.TannerValueIsInvalid, Converter={StaticResource BoolToVisibilityConverter}}" TextAlignment="Right" Foreground="Red" Text="Invalid value" ToolTip="The color has not been applied and won't be if you save with this value."/>
 
 							<Slider Margin="0,5,0,0" IsMoveToPointEnabled="True" Grid.Row="1" Grid.ColumnSpan="2" Minimum="2000" Maximum="6600" Interval="10" Value="{Binding SelectedMonitor.TannerHellandSliderValue, Mode=TwoWay}"/>
 						</Grid>
@@ -58,7 +58,7 @@
 							
 							<RadioButton GroupName="Algorithm" Content="Use custom color" IsChecked="{Binding SelectedMonitor.IsRadioButtonUseImageChecked}"/>
 
-							<TextBlock Grid.Column="1" Visibility="{Binding SelectedMonitor.CustomColorIsInvalid, Converter={StaticResource BoolToVisibilityConverter}}" TextAlignment="Right" Foreground="Red" Text="Invalid value"/>
+							<TextBlock Grid.Column="1" Visibility="{Binding SelectedMonitor.CustomColorIsInvalid, Converter={StaticResource BoolToVisibilityConverter}}" TextAlignment="Right" Foreground="Red" Text="Invalid value" ToolTip="The color has not been applied and won't be if you save with this value."/>
 						</Grid>
 						
 						
@@ -142,7 +142,7 @@
 				</StackPanel>
 			</TabItem>
 		</TabControl>
-		<TextBlock Grid.Row="1" HorizontalAlignment="Right">
+		<TextBlock Grid.Row="1" TextAlignment="Right" Margin="0,0,5,2">
 			<Run>Version </Run>
 			<Run Text="{Binding Version, Mode=OneWay}"></Run>
 		</TextBlock>
