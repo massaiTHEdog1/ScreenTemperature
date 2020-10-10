@@ -17,121 +17,135 @@
 		<converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
 	</Window.Resources>
 	<Grid>
-		<Grid Margin="10,0,10,5">
-			<Grid.RowDefinitions>
-				<RowDefinition Height="Auto"/>
-				<RowDefinition Height="Auto"/>
-				<RowDefinition Height="Auto"/>
-				<RowDefinition Height="*"/>
-				<RowDefinition Height="Auto"/>
-			</Grid.RowDefinitions>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="*"/>
+			<RowDefinition Height="auto"/>
+		</Grid.RowDefinitions>
+		<TabControl BorderThickness="0,1,0,0">
+			<TabItem Header="Color">
+				<Grid>
+					<StackPanel Margin="5">
+						<ComboBox Width="100" HorizontalAlignment="Left" ItemsSource="{Binding Monitors}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"/>
 
-			<StackPanel Grid.Row="0" Orientation="Horizontal">
-				<ComboBox Width="100" HorizontalAlignment="Left" ItemsSource="{Binding Monitors}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"/>
-				<Button Content="Refresh" Command="{Binding RefreshMonitorsCommand}"/>
-			</StackPanel>
+						<RadioButton GroupName="Algorithm" Content="Use Tanner Helland's algorithm" IsChecked="{Binding SelectedMonitor.IsRadioButtonUseTannerHellandAlgorithmChecked}" Margin="0,10,0,0"/>
 
-			<StackPanel Grid.Row="1" Margin="0,10,0,0">
-				<RadioButton GroupName="Algorithm" Content="Use Tanner Helland's algorithm" IsChecked="{Binding IsRadioButtonUseTannerHellandAlgorithmChecked}"/>
-				<RadioButton GroupName="Algorithm" Content="Use custom color" IsChecked="{Binding IsRadioButtonUseImageChecked}"/>
-			</StackPanel>
+						<Grid IsEnabled="{Binding SelectedMonitor.IsRadioButtonUseTannerHellandAlgorithmChecked}" Margin="0,5,0,0">
+							<Grid.RowDefinitions>
+								<RowDefinition Height="Auto"/>
+								<RowDefinition Height="Auto"/>
+							</Grid.RowDefinitions>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="Auto"/>
+								<ColumnDefinition Width="*"/>
+							</Grid.ColumnDefinitions>
 
-			<Grid Grid.Row="2" Visibility="{Binding IsRadioButtonUseTannerHellandAlgorithmChecked, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,5,0,0">
-				<Grid.RowDefinitions>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="18"/>
-				</Grid.RowDefinitions>
-				
-				<TextBlock Grid.Row="0" Margin="0,0,0,5">
-					<Run Text="Temperature: "/>
-					<Run Text="{Binding KelvinValue, Mode=TwoWay}"/>
-					<Run Text=" K"/>
-				</TextBlock>
+							<TextBlock Grid.Row="0" IsEnabled="False">
+								<Run Text="Temperature: "/>
+								<Run Text="{Binding SelectedMonitor.TannerHellandSliderValue, Mode=TwoWay}"/>
+								<Run Text=" K"/>
+							</TextBlock>
 
-				<Slider IsMoveToPointEnabled="True" Grid.Row="1" Minimum="2000" Maximum="6600" Interval="10" Value="{Binding KelvinValue, Mode=TwoWay}"/>
-			</Grid>
-			<Grid Grid.Row="2" Visibility="{Binding IsRadioButtonUseImageChecked, Converter={StaticResource BoolToVisibilityConverter}}"  Margin="0,5,0,0">
-				<Grid.RowDefinitions>
-					<RowDefinition Height="18"/>
-					<RowDefinition Height="Auto"/>
-				</Grid.RowDefinitions>
+							<TextBlock Grid.Row="0" Grid.Column="1" Visibility="{Binding SelectedMonitor.TannerValueIsInvalid, Converter={StaticResource BoolToVisibilityConverter}}" TextAlignment="Right" Foreground="Red" Text="Invalid value"/>
 
-				<Image Grid.Row="0" Stretch="Fill" Source="{Binding ImageGradient}"/>
-				<Slider Grid.Row="0" IsMoveToPointEnabled="True" Minimum="0" Maximum="1000" Interval="10" Value="{Binding ImageSliderValue, Mode=TwoWay}"/>
+							<Slider Margin="0,5,0,0" IsMoveToPointEnabled="True" Grid.Row="1" Grid.ColumnSpan="2" Minimum="2000" Maximum="6600" Interval="10" Value="{Binding SelectedMonitor.TannerHellandSliderValue, Mode=TwoWay}"/>
+						</Grid>
 
-				<xctk:ColorPicker  Grid.Row="1" UsingAlphaChannel="False" HorizontalAlignment="Left" Width="40" SelectedColor="{Binding SelectedColor}" Margin="0,5,0,0"/>
-			</Grid>
+						<Grid Margin="0,10,0,0">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="Auto"/>
+								<ColumnDefinition Width="*"/>
+							</Grid.ColumnDefinitions>
+							
+							<RadioButton GroupName="Algorithm" Content="Use custom color" IsChecked="{Binding SelectedMonitor.IsRadioButtonUseImageChecked}"/>
 
+							<TextBlock Grid.Column="1" Visibility="{Binding SelectedMonitor.CustomColorIsInvalid, Converter={StaticResource BoolToVisibilityConverter}}" TextAlignment="Right" Foreground="Red" Text="Invalid value"/>
+						</Grid>
+						
+						
+						<Grid IsEnabled="{Binding SelectedMonitor.IsRadioButtonUseImageChecked}"  Margin="0,5,0,0">
+							<Grid.RowDefinitions>
+								<RowDefinition Height="Auto"/>
+								<RowDefinition Height="Auto"/>
+							</Grid.RowDefinitions>
 
+							<Image Grid.Row="0" Stretch="Fill" Source="{Binding SelectedMonitor.ImageGradient}"/>
+							<Slider Grid.Row="0" IsMoveToPointEnabled="True" Minimum="0" Maximum="1000" Interval="10" Value="{Binding SelectedMonitor.CustomColorSliderValue, Mode=TwoWay}"/>
 
-			<GroupBox Grid.Row="3" Header="Configurations" Margin="0,5,0,0">
-				<Grid Margin="0,5,0,0">
-					<Grid.RowDefinitions>
-						<RowDefinition Height="Auto"/>
-						<RowDefinition Height="Auto"/>
-						<RowDefinition Height="*"/>
-						<RowDefinition Height="Auto"/>
-					</Grid.RowDefinitions>
-					<Grid.ColumnDefinitions>
-						<ColumnDefinition Width="150"/>
-						<ColumnDefinition Width="*"/>
-					</Grid.ColumnDefinitions>
-
-					<Grid Grid.Row="0" Grid.ColumnSpan="3">
+							<xctk:ColorPicker  Grid.Row="1" UsingAlphaChannel="False" HorizontalAlignment="Left" Width="40" SelectedColor="{Binding SelectedMonitor.CustomColor}" Margin="0,5,0,0"/>
+						</Grid>
+					</StackPanel>
+				</Grid>
+			</TabItem>
+			<TabItem Header="Configurations">
+				<Grid Margin="5">
+					<Grid Margin="0,5,0,0">
 						<Grid.RowDefinitions>
-							<RowDefinition Height="20"/>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="*"/>
+							<RowDefinition Height="Auto"/>
 						</Grid.RowDefinitions>
 						<Grid.ColumnDefinitions>
-							<ColumnDefinition Width="100"/>
+							<ColumnDefinition Width="150"/>
 							<ColumnDefinition Width="*"/>
 						</Grid.ColumnDefinitions>
 
-						<TextBox Grid.Column="0" TextWrapping="NoWrap" VerticalContentAlignment="Center" Text="{Binding TextNameConfig, Mode=TwoWay}"/>
-						<Button Grid.Column="1" Content="Save current screen color" Command="{Binding OnClickButtonSaveConfigCommand}"/>
+						<Grid Grid.Row="0" Grid.ColumnSpan="3">
+							<Grid.RowDefinitions>
+								<RowDefinition Height="20"/>
+							</Grid.RowDefinitions>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="100"/>
+								<ColumnDefinition Width="*"/>
+							</Grid.ColumnDefinitions>
+
+							<TextBox Grid.Column="0" TextWrapping="NoWrap" VerticalContentAlignment="Center" Text="{Binding TextNameConfig, Mode=TwoWay}"/>
+							<Button Grid.Column="1" Content="Save current screen color" Command="{Binding OnClickButtonSaveConfigCommand}"/>
+						</Grid>
+
+						<Separator Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,5"/>
+
+						<ListBox Grid.Row="2" Grid.Column="0" IsSynchronizedWithCurrentItem="True" 
+							ItemsSource="{Binding Configs}" 
+							SelectedIndex="{Binding SelectedConfigIndex, Mode=TwoWay}" 
+							SelectedItem="{Binding SelectedConfig, Mode=TwoWay}"/>
+
+						<StackPanel Grid.Row="2" Grid.Column="1" Margin="5,0,0,0" Visibility="{Binding SelectedConfig, Converter={StaticResource NullToVisibilityConverter}}">
+							<Button Command="{Binding MoveConfigUpCommand}">
+								<Image Height="11" Width="57" Source="Resources/arrow_up.png"/>
+							</Button>
+
+							<Button Margin="0,5,0,0" Command="{Binding MoveConfigDownCommand}">
+								<Image Height="11" Width="57" Source="Resources/arrow_down.png"/>
+							</Button>
+
+							<Button Content="Assign Key" Margin="0,5,0,0" Command="{Binding AssignKeyToConfigCommand}"/>
+
+							<TextBlock Text="{Binding SelectedConfig.KeyBinding}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
+
+							<Button Content="Delete" Margin="0,5,0,0" Command="{Binding DeleteConfigCommand}"/>
+						</StackPanel>
 					</Grid>
-
-					<Separator Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,5"/>
-
-					<ListBox Grid.Row="2" Grid.Column="0" IsSynchronizedWithCurrentItem="True" 
-							 ItemsSource="{Binding Configs}" 
-							 SelectedIndex="{Binding SelectedConfigIndex, Mode=TwoWay}" 
-							 SelectedItem="{Binding SelectedConfig, Mode=TwoWay}"/>
-
-					<StackPanel Grid.Row="2" Grid.Column="1" Margin="5,0,0,0" Visibility="{Binding SelectedConfig, Converter={StaticResource NullToVisibilityConverter}}">
-						<Button Command="{Binding MoveConfigUpCommand}">
-							<Image Height="11" Width="57" Source="Resources/arrow_up.png"/>
-						</Button>
-
-						<Button Margin="0,5,0,0" Command="{Binding MoveConfigDownCommand}">
-							<Image Height="11" Width="57" Source="Resources/arrow_down.png"/>
-						</Button>
-
-						<Button Content="Assign Key" Margin="0,5,0,0" Command="{Binding AssignKeyToConfigCommand}"/>
-
-						<TextBlock Text="{Binding SelectedConfig.KeyBinding}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
-
-						<Button Content="Delete" Margin="0,5,0,0" Command="{Binding DeleteConfigCommand}"/>
-					</StackPanel>
-					
-				   <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,0">
-					   <CheckBox Margin="0,0,5,0" IsChecked="{Binding IsCheckboxStartAtSystemStartupChecked}"/>
-					   <TextBlock Text="Start application on system startup"/>
-					</StackPanel>
+					<Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Background="White" Visibility="{Binding IsWaitingForKeyInput, Converter={StaticResource BoolToVisibilityConverter}}">
+						<StackPanel VerticalAlignment="Center">
+							<TextBlock Text="Press a key" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+							<TextBlock Text="ESC to cancel" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+							<TextBlock Text="Back to delete" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+						</StackPanel>
+					</Grid>
 				</Grid>
-			</GroupBox>
-
-			<TextBlock Grid.Row="4" HorizontalAlignment="Right">
-				<Run>Version </Run>
-				<Run Text="{Binding Version, Mode=OneWay}"></Run>
-			</TextBlock>
-		</Grid>
-		<Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Background="White" Visibility="{Binding IsWaitingForKeyInput, Converter={StaticResource BoolToVisibilityConverter}}">
-			<StackPanel VerticalAlignment="Center">
-				<TextBlock Text="Press a key" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-				<TextBlock Text="ESC to cancel" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-				<TextBlock Text="Back to delete" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-			</StackPanel>
-		</Grid>
+			</TabItem>
+			<TabItem Header="Options">
+				<StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="5">
+					<CheckBox Margin="0,0,5,0" IsChecked="{Binding IsCheckboxStartAtSystemStartupChecked}"/>
+					<TextBlock Text="Start application on system startup"/>
+				</StackPanel>
+			</TabItem>
+		</TabControl>
+		<TextBlock Grid.Row="1" HorizontalAlignment="Right">
+			<Run>Version </Run>
+			<Run Text="{Binding Version, Mode=OneWay}"></Run>
+		</TextBlock>
 	</Grid>
 </Window>
 

@@ -16,14 +16,11 @@ using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using ScreenTemperature.Classes;
 using Microsoft.Win32;
-using Color = System.Windows.Media.Color;
-using Container = SimpleInjector.Container;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MessageBox = System.Windows.MessageBox;
 using TimeoutException = System.TimeoutException;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
+using Newtonsoft.Json;
 
 namespace ScreenTemperature
 {
@@ -40,7 +37,6 @@ namespace ScreenTemperature
 		private readonly NotifyIcon _notifyIcon = new NotifyIcon();
 
 		private IntPtr _windowHandle;
-		private int _kelvinValue = 6600;
 		private ObservableCollection<Config> _configs;
 		private List<Monitor> _monitors;
 		private int _selectedConfigIndex;
@@ -49,13 +45,8 @@ namespace ScreenTemperature
 		private string _textNameConfig;
 		private bool _isWaitingForKeyInput;
 		private bool _isCheckboxStartAtSystemStartupChecked;
-		private bool _isRadioButtonUseTannerHellandAlgorithmChecked;
-		private bool _isRadioButtonUseImageChecked;
-		private int _imageSliderValue = 1000;
-		private Color _selectedColor = new Color() { A = 255, R = 255, G = 186, B = 127 };
-		private BitmapImage _imageGradient;
 		private string _configDirectory;
-		private bool _flagIgnoreChanges = true;
+		private bool _dontApplyMonitor;
 
 		#region Commands
 
@@ -70,23 +61,6 @@ namespace ScreenTemperature
 		#endregion
 
 		#region Properties
-
-		/// <summary>
-		/// Kelvin slider's value
-		/// </summary>
-		public int KelvinValue
-		{
-			get => _kelvinValue;
-			set
-			{
-				_kelvinValue = value;
-				NotifyPropertyChanged(nameof(KelvinValue));
-
-				SelectedMonitor.TannerHellandSliderValue = value;
-
-				ApplySelectedMonitor();
-			}
-		}
 
 		/// <summary>
 		/// List of available configs
@@ -158,24 +132,27 @@ namespace ScreenTemperature
 			get => _selectedMonitor;
 			set
 			{
+				var previousValue = _selectedMonitor;
+				if(previousValue != null)
+				{
+					previousValue.IgnoreRadioValueChange = true;
+				}
+
 				_selectedMonitor = value;
 				NotifyPropertyChanged(nameof(SelectedMonitor));
 
-				if(value != null && SelectedConfig != null)
+				if (previousValue != null)
+				{
+					previousValue.IgnoreRadioValueChange = false;
+				}
+
+				if (value != null && SelectedConfig != null)
 				{
 					var monitor = SelectedConfig.Monitors.FirstOrDefault(x => x.DeviceName == value.DeviceName);
 
 					if(monitor != null)
 					{
-						_flagIgnoreChanges = true;
 
-						KelvinValue = monitor.TannerHellandSliderValue;
-						ImageSliderValue = monitor.CustomColorSliderValue;
-						//SelectedColor = new Color() { }
-						IsRadioButtonUseTannerHellandAlgorithmChecked = monitor.AlgorithmType == Enums.AlgorithmType.TannerHelland;
-						IsRadioButtonUseImageChecked = monitor.AlgorithmType == Enums.AlgorithmType.Custom;
-
-						_flagIgnoreChanges = false;
 					}
 				}
 			}
@@ -255,103 +232,27 @@ namespace ScreenTemperature
 			}
 		}
 
-		public bool IsRadioButtonUseTannerHellandAlgorithmChecked
-		{
-			get => _isRadioButtonUseTannerHellandAlgorithmChecked;
-			set
-			{
-				_isRadioButtonUseTannerHellandAlgorithmChecked = value;
-				NotifyPropertyChanged(nameof(IsRadioButtonUseTannerHellandAlgorithmChecked));
-
-				if(value)
-					SelectedMonitor.AlgorithmType = Enums.AlgorithmType.TannerHelland;
-			}
-		}
-
-		public bool IsRadioButtonUseImageChecked
-		{
-			get => _isRadioButtonUseImageChecked;
-			set
-			{
-				_isRadioButtonUseImageChecked = value;
-				NotifyPropertyChanged(nameof(IsRadioButtonUseImageChecked));
-
-				if(value)
-					SelectedMonitor.AlgorithmType = Enums.AlgorithmType.Custom;
-			}
-		}
-
-		/// <summary>
-		/// Image slider's value
-		/// </summary>
-		public int ImageSliderValue
-		{
-			get => _imageSliderValue;
-			set
-			{
-				_imageSliderValue = value;
-				NotifyPropertyChanged(nameof(ImageSliderValue));
-
-				SelectedMonitor.CustomColorSliderValue = value;
-
-				ApplySelectedMonitor();
-			}
-		}
-
 		private void ApplySelectedMonitor()
 		{
-			if(SelectedMonitor.AlgorithmType == Enums.AlgorithmType.Custom)
-			{
-				ApplySelectedImageSliderValueToMonitor(SelectedMonitor);
-			}
-			else if(SelectedMonitor.AlgorithmType == Enums.AlgorithmType.TannerHelland)
-			{
-				ApplyKelvinToMonitor(KelvinValue, SelectedMonitor);
-			}
+			ApplyMonitor(SelectedMonitor);
 		}
 
-		public Color SelectedColor
+		private void ApplyMonitor(Monitor monitor)
 		{
-			get => _selectedColor;
-			set
+			if (_dontApplyMonitor)
+				return;
+
+			if (monitor.IsRadioButtonUseImageChecked)
 			{
-				_selectedColor = value;
-				NotifyPropertyChanged(nameof(SelectedColor));
-
-				using (var bitmap = new Bitmap(1000, 1))
-				using (var graphics = Graphics.FromImage(bitmap))
-				using (var brush = new LinearGradientBrush(
-					new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-					System.Drawing.Color.FromArgb(SelectedColor.A, SelectedColor.R, SelectedColor.G, SelectedColor.B),
-					System.Drawing.Color.White,
-					LinearGradientMode.Horizontal))
-				using (var memory = new MemoryStream())
-				{
-					graphics.FillRectangle(brush, new Rectangle(0, 0, bitmap.Width, bitmap.Height));
-					bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Bmp);
-					memory.Position = 0;
-					var bitmapImage = new BitmapImage();
-					bitmapImage.BeginInit();
-					bitmapImage.StreamSource = memory;
-					bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-					bitmapImage.EndInit();
-
-					ImageGradient = bitmapImage;
-				}
-
-				SelectedMonitor.CustomColorColorValue = value.ToString();
+				ApplySelectedImageSliderValueToMonitor(monitor);
+			}
+			else if (monitor.IsRadioButtonUseTannerHellandAlgorithmChecked)
+			{
+				ApplyKelvinToMonitor(SelectedMonitor.TannerHellandSliderValue, monitor);
 			}
 		}
 
-		public BitmapImage ImageGradient
-		{
-			get => _imageGradient;
-			set
-			{
-				_imageGradient = value;
-				NotifyPropertyChanged(nameof(ImageGradient));
-			}
-		}
+		
 
 		public string Version
 		{
@@ -366,7 +267,7 @@ namespace ScreenTemperature
 		private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
 
 		[DllImport("User32.dll")]
-		private static extern bool UnRegisterHotKey(IntPtr hWnd, int id);
+		private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
 		[DllImport("gdi32.dll")]
 		private static extern IntPtr CreateDC(string lpszDriver, string lpszDevice, string lpszOutput, IntPtr lpInitData);
@@ -548,7 +449,7 @@ namespace ScreenTemperature
 				{
 					if (SelectedConfig.KeyBinding != null)
 					{
-						UnRegisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
+						UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
 					}
 
 					SelectedConfig.KeyBinding = null;
@@ -558,7 +459,7 @@ namespace ScreenTemperature
 				{
 					if (SelectedConfig.KeyBinding != null)
 					{
-						UnRegisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
+						UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
 					}
 
 					SelectedConfig.KeyBinding = new KeyData(keyEventArgs.Key == Key.System ? keyEventArgs.SystemKey : keyEventArgs.Key, Keyboard.IsKeyDown(Key.LeftShift), Keyboard.IsKeyDown(Key.LeftAlt), Keyboard.IsKeyDown(Key.LeftCtrl));
@@ -591,21 +492,21 @@ namespace ScreenTemperature
 			{
 				var hdc = CreateDC(Screen.AllScreens[i].DeviceName, null, null, IntPtr.Zero);
 
-				Monitors.Add(new Monitor()
+				var monitor = new Monitor()
 				{
 					DeviceName = Screen.AllScreens[i].DeviceName,
 					Label = "Screen " + (i + 1),
 					Hdc = hdc
-				});
+				};
+
+				monitor.PropertyChangedApplyMonitor += ApplySelectedMonitor;
+
+				Monitors.Add(monitor);
 			}
 
 			SelectedMonitor = Monitors.FirstOrDefault();
 
 			#endregion
-
-			IsRadioButtonUseTannerHellandAlgorithmChecked = true;
-
-			SelectedColor = _selectedColor;
 
 			#region Load configs
 
@@ -623,15 +524,18 @@ namespace ScreenTemperature
 
 			var configs = new List<Config>();
 
-			foreach (var file in Directory.GetFiles(_configDirectory, "*.bin"))
+			foreach (var file in Directory.GetFiles(_configDirectory, "*.json"))
 			{
 				try
 				{
-					IFormatter formatter = new BinaryFormatter();
+					var formatter = new JsonSerializer();
 
 					using (Stream stream = new FileStream($@"{file}", FileMode.Open, FileAccess.Read, FileShare.Read))
+					using (StreamReader sr = new StreamReader(stream))
 					{
-						configs.Add((Config)formatter.Deserialize(stream));
+						var config = JsonConvert.DeserializeObject<Config>(sr.ReadToEnd());
+						
+						configs.Add(config);
 					}
 				}
 				catch (Exception ex)
@@ -641,28 +545,6 @@ namespace ScreenTemperature
 			}
 
 			Configs = new ObservableCollection<Config>(configs.OrderBy(conf => conf.Order));
-
-			if (Configs.Count > 0)
-			{
-				SelectedConfig = Configs[0];
-			}
-			else
-			{
-				foreach (var monitor in Monitors)
-				{
-					if (IsRadioButtonUseTannerHellandAlgorithmChecked)
-					{
-						monitor.AlgorithmType = Enums.AlgorithmType.TannerHelland;
-						monitor.TannerHellandSliderValue = KelvinValue;
-					}
-					else if (IsRadioButtonUseImageChecked)
-					{
-						monitor.AlgorithmType = Enums.AlgorithmType.Custom;
-						monitor.CustomColorColorValue = SelectedColor.ToString();
-						monitor.CustomColorSliderValue = ImageSliderValue;
-					}
-				}
-			}
 
 			#endregion
 
@@ -802,7 +684,7 @@ namespace ScreenTemperature
 		{
 			if (SelectedConfig.KeyBinding != null)
 			{
-				UnRegisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
+				UnregisterHotKey(_windowHandle, KeyInterop.VirtualKeyFromKey(SelectedConfig.KeyBinding.Key));
 			}
 
 			try
@@ -817,23 +699,22 @@ namespace ScreenTemperature
 			}
 		}
 
-		private unsafe void ApplySelectedConfig()
+		private void ApplySelectedConfig()
 		{
-			ushort* gArray = stackalloc ushort[3 * 256];
-
-			foreach (var monitor in Monitors)
-			{
-				ApplyKelvinToMonitor(6600, monitor);
-			}
-
 			foreach (var monitor in SelectedConfig.Monitors)
 			{
-				for (var i = 0; i < 256 * 3; i++)
-				{
-					//gArray[i] = monitor.Rgb[i];
-				}
+				var existingMonitor = Monitors.FirstOrDefault(x => x.DeviceName == monitor.DeviceName);
 
-				SetDeviceGammaRamp(monitor.Hdc.ToInt32(), gArray);
+				if(existingMonitor != null)
+				{
+					_dontApplyMonitor = true;
+
+					monitor.CopyTo(existingMonitor);
+
+					_dontApplyMonitor = false;
+
+					ApplyMonitor(existingMonitor);
+				}
 			}
 		}
 
@@ -919,7 +800,9 @@ namespace ScreenTemperature
 				gArray[512 + ik] = (ushort)(ik * blue);
 			}
 
-			SetDeviceGammaRamp(monitor.Hdc.ToInt32(), gArray);
+			var result = SetDeviceGammaRamp(monitor.Hdc.ToInt32(), gArray);
+
+			monitor.TannerValueIsInvalid = !result;
 		}
 
 		/// <summary>
@@ -932,18 +815,18 @@ namespace ScreenTemperature
 			using (var outStream = new MemoryStream())
 			{
 				BitmapEncoder enc = new BmpBitmapEncoder();
-				enc.Frames.Add(BitmapFrame.Create(ImageGradient));
+				enc.Frames.Add(BitmapFrame.Create(SelectedMonitor.ImageGradient));
 				enc.Save(outStream);
 
 				using (var bmp = new Bitmap(outStream))
 				{
-					if (ImageSliderValue < 0)
-						ImageSliderValue = 0;
-					if (ImageSliderValue >= bmp.Width)
-						ImageSliderValue = bmp.Width - 1;
+					if (monitor.CustomColorSliderValue < 0)
+						monitor.CustomColorSliderValue = 0;
+					if (monitor.CustomColorSliderValue >= bmp.Width)
+						monitor.CustomColorSliderValue = bmp.Width - 1;
 
 
-					var clr = bmp.GetPixel(ImageSliderValue, 0);
+					var clr = bmp.GetPixel(monitor.CustomColorSliderValue, 0);
 
 					red = clr.R;
 					green = clr.G;
@@ -960,7 +843,9 @@ namespace ScreenTemperature
 				gArray[512 + ik] = (ushort)(ik * blue);
 			}
 
-			SetDeviceGammaRamp(monitor.Hdc.ToInt32(), gArray);
+			var result = SetDeviceGammaRamp(monitor.Hdc.ToInt32(), gArray);
+
+			monitor.CustomColorIsInvalid = !result;
 		}
 
 		/// <summary>
@@ -976,14 +861,14 @@ namespace ScreenTemperature
 
 				while (true)
 				{
-					if (!File.Exists($@"{_configDirectory}\config{i}.bin"))
+					if (!File.Exists($@"{_configDirectory}\config{i}.json"))
 					{
-						using (var fs = File.Create($@"{_configDirectory}\config{i}.bin"))
+						using (var fs = File.Create($@"{_configDirectory}\config{i}.json"))
 						{
 							fs.Close();
 						}
 
-						config.ConfigPath = $@"{_configDirectory}\config{i}.bin";
+						config.ConfigPath = $@"{_configDirectory}\config{i}.json";
 						addConfigToList = true;
 						break;
 					}
@@ -996,11 +881,15 @@ namespace ScreenTemperature
 
 			try
 			{
-				IFormatter formatter = new BinaryFormatter();
+				if (File.Exists(config.ConfigPath))
+					File.Delete(config.ConfigPath);
+
+				var formatter = new JsonSerializer();
 
 				using (Stream stream = new FileStream(config.ConfigPath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
+				using (StreamWriter sw = new StreamWriter(stream))
 				{
-					formatter.Serialize(stream, config);
+					formatter.Serialize(sw, config);
 				}
 			}
 			catch (Exception exception)
