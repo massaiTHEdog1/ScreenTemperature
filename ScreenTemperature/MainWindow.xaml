@@ -4,7 +4,7 @@
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	xmlns:converters="clr-namespace:ScreenTemperature.Converters"
-	xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+	xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" xmlns:hsvcolorpickers="clr-namespace:HSVColorPickers"
 	x:Class="ScreenTemperature.MainWindow"
 	mc:Ignorable="d"
 	Title="ScreenTemperature" Height="394" Width="294" StateChanged="MainForm_StateChanged" ResizeMode="CanMinimize"
@@ -24,12 +24,20 @@
 		<TabControl BorderThickness="0,1,0,0">
 			<TabItem Header="Color">
 				<Grid>
-					<StackPanel Margin="5">
-						<ComboBox Width="100" HorizontalAlignment="Left" ItemsSource="{Binding Monitors}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"/>
+					<Grid Margin="5">
+						<Grid.RowDefinitions>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="*"/>
+						</Grid.RowDefinitions>
+						
+						<ComboBox Grid.Row="0" Width="100" HorizontalAlignment="Left" ItemsSource="{Binding Monitors}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"/>
 
-						<RadioButton GroupName="Algorithm" Content="Use Tanner Helland's algorithm" IsChecked="{Binding SelectedMonitor.IsRadioButtonUseTannerHellandAlgorithmChecked}" Margin="0,10,0,0"/>
+						<RadioButton Grid.Row="1" GroupName="Algorithm" Content="Use Tanner Helland's algorithm" IsChecked="{Binding SelectedMonitor.IsRadioButtonUseTannerHellandAlgorithmChecked}" Margin="0,10,0,0"/>
 
-						<Grid IsEnabled="{Binding SelectedMonitor.IsRadioButtonUseTannerHellandAlgorithmChecked}" Margin="0,5,0,0">
+						<Grid Grid.Row="2" IsEnabled="{Binding SelectedMonitor.IsRadioButtonUseTannerHellandAlgorithmChecked}" Margin="0,5,0,0">
 							<Grid.RowDefinitions>
 								<RowDefinition Height="Auto"/>
 								<RowDefinition Height="Auto"/>
@@ -50,7 +58,7 @@
 							<Slider Margin="0,5,0,0" IsMoveToPointEnabled="True" Grid.Row="1" Grid.ColumnSpan="2" Minimum="2000" Maximum="6600" Interval="10" Value="{Binding SelectedMonitor.TannerHellandSliderValue, Mode=TwoWay}"/>
 						</Grid>
 
-						<Grid Margin="0,10,0,0">
+						<Grid Grid.Row="3" Margin="0,10,0,0">
 							<Grid.ColumnDefinitions>
 								<ColumnDefinition Width="Auto"/>
 								<ColumnDefinition Width="*"/>
@@ -60,20 +68,23 @@
 
 							<TextBlock Grid.Column="1" Visibility="{Binding SelectedMonitor.CustomColorIsInvalid, Converter={StaticResource BoolToVisibilityConverter}}" TextAlignment="Right" Foreground="Red" Text="Invalid value" ToolTip="The color has not been applied and won't be if you save with this value."/>
 						</Grid>
-						
-						
-						<Grid IsEnabled="{Binding SelectedMonitor.IsRadioButtonUseImageChecked}"  Margin="0,5,0,0">
+
+
+						<Grid Grid.Row="4" IsEnabled="{Binding SelectedMonitor.IsRadioButtonUseImageChecked}"  Margin="0,5,0,0">
 							<Grid.RowDefinitions>
 								<RowDefinition Height="Auto"/>
 								<RowDefinition Height="Auto"/>
+								<RowDefinition Height="*"/>
 							</Grid.RowDefinitions>
 
 							<Image Grid.Row="0" Stretch="Fill" Source="{Binding SelectedMonitor.ImageGradient}"/>
-							<Slider Grid.Row="0" IsMoveToPointEnabled="True" Minimum="0" Maximum="1000" Interval="10" Value="{Binding SelectedMonitor.CustomColorSliderValue, Mode=TwoWay}"/>
+							<Slider Grid.Row="0" IsMoveToPointEnabled="True" Minimum="500" Maximum="1000" Interval="10" Value="{Binding SelectedMonitor.CustomColorSliderValue, Mode=TwoWay}"/>
 
-							<xctk:ColorPicker  Grid.Row="1" UsingAlphaChannel="False" HorizontalAlignment="Left" Width="40" SelectedColor="{Binding SelectedMonitor.CustomColor}" Margin="0,5,0,0"/>
+							<xctk:ColorPicker Grid.Row="1" UsingAlphaChannel="False" HorizontalAlignment="Left" Width="40" SelectedColor="{Binding SelectedMonitor.CustomColor}" Margin="0,5,0,0"/>
+
+							<hsvcolorpickers:CirclePicker Grid.Row="2" Color="{Binding SelectedMonitor.CustomColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></hsvcolorpickers:CirclePicker>
 						</Grid>
-					</StackPanel>
+					</Grid>
 				</Grid>
 			</TabItem>
 			<TabItem Header="Configurations">

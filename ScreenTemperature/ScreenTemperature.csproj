@@ -68,6 +68,9 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Management" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\portable-net45+win8+wp8+wpa81\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
@@ -107,6 +110,10 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Classes\Monitor.cs" />
+    <Page Include="HsvColorPickers\CirclePicker.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -121,6 +128,14 @@
     <Compile Include="Converters\BoolToVisibilityConverter.cs" />
     <Compile Include="Converters\NotBoolToVisibilityConverter.cs" />
     <Compile Include="Converters\NullToVisibilityConverter.cs" />
+    <Compile Include="HsvColorPickers\CirclePicker.xaml.cs">
+      <DependentUpon>CirclePicker.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="HsvColorPickers\Handlers\ColorChangeHandler.cs" />
+    <Compile Include="HsvColorPickers\Handlers\HSVChangeHandler.cs" />
+    <Compile Include="HsvColorPickers\HSV.cs" />
+    <Compile Include="HsvColorPickers\Interface\IColorPicker.cs" />
+    <Compile Include="HsvColorPickers\Interface\IHSVPicker.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
