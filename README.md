@@ -8,4 +8,4 @@ What's different with f.lux?
 -Multi-screen support and possibility to change each screen individually  
 -Custom color gradient  
   
-![Alt text](https://i.imgur.com/vVCuusg.jpg)
+![Screenshot](https://github.com/massaiTHEdog1/ScreenTemperature/blob/master/Screenshots/Screenshot1.jpg)

@@ -91,7 +91,7 @@
 				<Grid Margin="5">
 					<Grid Margin="0,5,0,0">
 						<Grid.RowDefinitions>
-							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="20"/>
 							<RowDefinition Height="Auto"/>
 							<RowDefinition Height="*"/>
 							<RowDefinition Height="Auto"/>
@@ -101,18 +101,8 @@
 							<ColumnDefinition Width="*"/>
 						</Grid.ColumnDefinitions>
 
-						<Grid Grid.Row="0" Grid.ColumnSpan="3">
-							<Grid.RowDefinitions>
-								<RowDefinition Height="20"/>
-							</Grid.RowDefinitions>
-							<Grid.ColumnDefinitions>
-								<ColumnDefinition Width="100"/>
-								<ColumnDefinition Width="*"/>
-							</Grid.ColumnDefinitions>
-
-							<TextBox Grid.Column="0" TextWrapping="NoWrap" VerticalContentAlignment="Center" Text="{Binding TextNameConfig, Mode=TwoWay}"/>
-							<Button Grid.Column="1" Content="Save current screen color" Command="{Binding OnClickButtonSaveConfigCommand}"/>
-						</Grid>
+						<TextBox Grid.Column="0" TextWrapping="NoWrap" VerticalContentAlignment="Center" Text="{Binding TextNameConfig, Mode=TwoWay}"/>
+						<Button Grid.Column="1" Content="Save current values" Command="{Binding OnClickButtonSaveConfigCommand}"/>
 
 						<Separator Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,5"/>
 
