@@ -815,7 +815,7 @@ namespace ScreenTemperature
 			using (var outStream = new MemoryStream())
 			{
 				BitmapEncoder enc = new BmpBitmapEncoder();
-				enc.Frames.Add(BitmapFrame.Create(SelectedMonitor.ImageGradient));
+				enc.Frames.Add(BitmapFrame.Create(monitor.ImageGradient));
 				enc.Save(outStream);
 
 				using (var bmp = new Bitmap(outStream))
