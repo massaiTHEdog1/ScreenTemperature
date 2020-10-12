@@ -248,7 +248,7 @@ namespace ScreenTemperature
 			}
 			else if (monitor.IsRadioButtonUseTannerHellandAlgorithmChecked)
 			{
-				ApplyKelvinToMonitor(SelectedMonitor.TannerHellandSliderValue, monitor);
+				ApplyKelvinToMonitor(monitor.TannerHellandSliderValue, monitor);
 			}
 		}
 
