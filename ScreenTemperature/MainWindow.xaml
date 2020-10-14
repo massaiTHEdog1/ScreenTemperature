@@ -78,7 +78,7 @@
 							</Grid.RowDefinitions>
 
 							<Image Grid.Row="0" Stretch="Fill" Source="{Binding SelectedMonitor.ImageGradient}"/>
-							<Slider Grid.Row="0" IsMoveToPointEnabled="True" Minimum="500" Maximum="1000" Interval="10" Value="{Binding SelectedMonitor.CustomColorSliderValue, Mode=TwoWay}"/>
+							<Slider Grid.Row="0" IsMoveToPointEnabled="True" Minimum="0" Maximum="1000" Interval="10" Value="{Binding SelectedMonitor.CustomColorSliderValue, Mode=TwoWay}"/>
 
 							<xctk:ColorPicker Grid.Row="1" UsingAlphaChannel="False" HorizontalAlignment="Left" Width="40" SelectedColor="{Binding SelectedMonitor.CustomColor}" Margin="0,5,0,0"/>
 
