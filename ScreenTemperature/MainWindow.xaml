@@ -7,7 +7,7 @@
 	xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" xmlns:hsvcolorpickers="clr-namespace:HSVColorPickers"
 	x:Class="ScreenTemperature.MainWindow"
 	mc:Ignorable="d"
-	Title="ScreenTemperature" Height="394" Width="294" StateChanged="MainForm_StateChanged" ResizeMode="CanMinimize"
+	Title="ScreenTemperature" Height="475" Width="294" StateChanged="MainForm_StateChanged" ResizeMode="CanMinimize"
 	DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
 	KeyUp="Window_OnKeyUp"
 	Loaded="MainWindow_OnLoaded">
