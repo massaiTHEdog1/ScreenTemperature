@@ -7,6 +7,8 @@ What's different with f.lux?
 -Simple interface  
 -Multi-screen support and possibility to change each screen individually  
 -Custom color gradient  
+
+Please make sure your video drivers are up to date as it's not working on very old versions.
   
 ![Screenshot](https://github.com/massaiTHEdog1/ScreenTemperature/blob/master/Screenshots/Screenshot1.jpg)  
   
