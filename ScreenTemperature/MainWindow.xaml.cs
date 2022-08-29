@@ -21,6 +21,7 @@ using MessageBox = System.Windows.MessageBox;
 using TimeoutException = System.TimeoutException;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using ScreenTemperature.Helpers;
 
 namespace ScreenTemperature
 {
@@ -481,12 +482,12 @@ namespace ScreenTemperature
 				IsWaitingForKeyInput = false;
 			}
 		}
-
-		private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
+        
+        private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
 		{
-			#region Load monitors
+            #region Load monitors
 
-			Monitors = new List<Monitor>();
+            Monitors = new List<Monitor>();
 
 			for (int i = 0; i < Screen.AllScreens.Length; i++)
 			{
@@ -495,7 +496,7 @@ namespace ScreenTemperature
 				var monitor = new Monitor()
 				{
 					DeviceName = Screen.AllScreens[i].DeviceName,
-					Label = "Screen " + (i + 1),
+					Label = Screen.AllScreens[i].DeviceFriendlyName(),
 					Hdc = hdc
 				};
 
@@ -709,9 +710,13 @@ namespace ScreenTemperature
 				{
 					_dontApplyMonitor = true;
 
-					monitor.CopyTo(existingMonitor);
+					var existingMonitorName = existingMonitor.Label;
 
-					_dontApplyMonitor = false;
+                    monitor.CopyTo(existingMonitor);
+
+					existingMonitor.Label = existingMonitorName;
+
+                    _dontApplyMonitor = false;
 
 					ApplyMonitor(existingMonitor);
 				}
