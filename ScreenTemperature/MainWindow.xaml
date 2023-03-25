@@ -84,7 +84,7 @@
 
 							<hsvcolorpickers:CirclePicker Grid.Row="2" Color="{Binding SelectedMonitor.CustomColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></hsvcolorpickers:CirclePicker>
 						</Grid>
-					</Grid>
+                    </Grid>
 				</Grid>
 			</TabItem>
 			<TabItem Header="Configurations">
