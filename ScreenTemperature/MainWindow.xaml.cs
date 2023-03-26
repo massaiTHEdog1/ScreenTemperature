@@ -407,6 +407,12 @@ namespace ScreenTemperature
             Show();
             Activate();
             WindowState = WindowState.Normal;
+
+            // Pause dispatcher timer when the window is visible to prevent any lag in the UI.
+            // A bug was found where if the dispatcher timer is not paused when the window is visible
+            // the config would be reapplied continuously preventing the user from adding
+            // a new config
+            _dispatcherTimer.Stop();
         }
 
         /// <summary>
@@ -459,6 +465,9 @@ namespace ScreenTemperature
             {
                 _notifyIcon.Visible = true;
                 Hide();
+                // Resume dispatcher timer when the window is minimized
+                _dispatcherTimer.Start();
+
             }
         }
 
@@ -527,7 +536,7 @@ namespace ScreenTemperature
                 // The DeviceFriendlyName method can return an empty string so we set the
                 // monitor name to a default value
                 if (String.IsNullOrEmpty(monitor.Label))
-                    monitor.Label = "-Unknown Device Name-";
+                    monitor.Label = $"Device {i}";
 
                 monitor.PropertyChangedApplyMonitor += ApplySelectedMonitor;
                 Monitors.Add(monitor);
@@ -755,7 +764,7 @@ namespace ScreenTemperature
         private void ApplySelectedConfigViaDispatcherTimer(object sender, EventArgs e)
         {
             ApplySelectedConfig();
-            // Trace.WriteLine("Dispatcher timer was invoked");
+            // Trace.WriteLine("Dispatcher timer was invoked. Selected config was reapplied.");
         }
         /// <summary>
         /// Changes screen color from kelvin value
