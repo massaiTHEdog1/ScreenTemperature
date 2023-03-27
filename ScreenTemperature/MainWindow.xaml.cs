@@ -36,7 +36,6 @@ namespace ScreenTemperature
 
         private NamedPipeServerStream _pipeServer;
         private readonly NotifyIcon _notifyIcon = new NotifyIcon();
-        private readonly DispatcherTimer _dispatcherTimer = new DispatcherTimer();
 
         private IntPtr _windowHandle;
         private ObservableCollection<Config> _configs;
@@ -327,24 +326,7 @@ namespace ScreenTemperature
 
             InitializeComponent();
 
-            #region Configure dispacher timer
-            // Sometimes an issue occurs where the HSV box drawn over the screen is gone and the user
-            // has to re-select the config for the box to be drawn again. One way to solve this is
-            // to add a timer that draws the box every set interval so incase it's gone it will
-            // be drawn automatically by the timer.
 
-            // We want to start this timer once the program has started weather it was minimized or not.
-
-            // The dispatcher timer runs on the UI thread.
-
-            // In every tick call the ApplySelectedConfigViaDispatcherTimer method which itself
-            // only calls ApplySelectedConfig
-            _dispatcherTimer.Tick += new EventHandler(ApplySelectedConfigViaDispatcherTimer);
-            // Set tick t be 2 second; nothing special about 2 just a preference  
-            _dispatcherTimer.Interval = new TimeSpan(0, 0, 2);
-            // Start dispatch timer
-            _dispatcherTimer.Start();
-            #endregion
         }
 
         ~MainWindow()
@@ -359,8 +341,7 @@ namespace ScreenTemperature
             _notifyIcon.Icon.Dispose();
             _notifyIcon.Dispose();
 
-            // Kill timer upon program exit
-            _dispatcherTimer.Stop();
+
 
         }
 
@@ -408,11 +389,6 @@ namespace ScreenTemperature
             Activate();
             WindowState = WindowState.Normal;
 
-            // Pause dispatcher timer when the window is visible to prevent any lag in the UI.
-            // A bug was found where if the dispatcher timer is not paused when the window is visible
-            // the config would be reapplied continuously preventing the user from adding
-            // a new config
-            _dispatcherTimer.Stop();
         }
 
         /// <summary>
@@ -465,8 +441,7 @@ namespace ScreenTemperature
             {
                 _notifyIcon.Visible = true;
                 Hide();
-                // Resume dispatcher timer when the window is minimized
-                _dispatcherTimer.Start();
+
 
             }
         }
@@ -760,11 +735,6 @@ namespace ScreenTemperature
                     ApplyMonitor(existingMonitor);
                 }
             }
-        }
-        private void ApplySelectedConfigViaDispatcherTimer(object sender, EventArgs e)
-        {
-            ApplySelectedConfig();
-            // Trace.WriteLine("Dispatcher timer was invoked. Selected config was reapplied.");
         }
         /// <summary>
         /// Changes screen color from kelvin value
