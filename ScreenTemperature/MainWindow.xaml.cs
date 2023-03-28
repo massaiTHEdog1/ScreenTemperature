@@ -501,7 +501,7 @@ namespace ScreenTemperature
                 // The DeviceFriendlyName method can return an empty string so we set the
                 // monitor name to a default value
                 if (String.IsNullOrEmpty(monitor.Label))
-                    monitor.Label = $"Device {i}";
+                    monitor.Label = $"Device {i+1}";
 
                 monitor.PropertyChangedApplyMonitor += ApplySelectedMonitor;
                 Monitors.Add(monitor);
