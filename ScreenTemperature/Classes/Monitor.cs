@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Color = System.Windows.Media.Color;
 
@@ -45,7 +44,7 @@ namespace ScreenTemperature.Classes
         }
 
         [JsonIgnore]
-        public bool TannerValueIsInvalid 
+        public bool TannerValueIsInvalid
         {
             get => _tannerValueIsInvalid;
             set

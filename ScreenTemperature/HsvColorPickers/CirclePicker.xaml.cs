@@ -1,11 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -140,10 +137,10 @@ namespace HSVColorPickers
         public Color Color
         {
             get { return (Color)GetValue(ColorProperty); }
-            set 
+            set
             {
                 this.HSV = HSV.RGBtoHSV(value);
-                SetValue(ColorProperty, value); 
+                SetValue(ColorProperty, value);
             }
         }
 
@@ -151,7 +148,7 @@ namespace HSVColorPickers
 
         private static void OnColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if(e.NewValue != null)
+            if (e.NewValue != null)
                 ((CirclePicker)d).Color = (Color)e.NewValue;
         }
 
@@ -255,7 +252,7 @@ namespace HSVColorPickers
                 this.UpdateEllipse(size);
                 this.UpdateThumb(this.hsv.H, this.hsv.S);
             };
-            
+
             //Manipulation
             this.Canvas.MouseLeftButtonDown += (s, e) =>
             {
@@ -280,9 +277,9 @@ namespace HSVColorPickers
 
         private HSV Change(Vector2 position)
         {
-            float H = CircleSize.VectorToH( position);
-            float S = CircleSize.VectorToS( position, this._radio);
-            HSV hsv = new HSV(255,H,S,this.hsv.V);
+            float H = CircleSize.VectorToH(position);
+            float S = CircleSize.VectorToS(position, this._radio);
+            HSV hsv = new HSV(255, H, S, this.hsv.V);
 
             this.Change(hsv);
             return hsv;
@@ -331,7 +328,7 @@ namespace HSVColorPickers
 
         #region Update
 
-        private void UpdateColor(Color color)=>    SolidColorBrush.Color = color;
+        private void UpdateColor(Color color) => SolidColorBrush.Color = color;
         private void UpdateThumb(float H, float S)
         {
             Vector2 wheel = CircleSize.HSToVector((float)((H + 360.0) * Math.PI / 180.0), S, this._radio, this._center);
