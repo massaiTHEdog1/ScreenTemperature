@@ -252,9 +252,6 @@ namespace ScreenTemperature
                 ApplyKelvinToMonitor(monitor.TannerHellandSliderValue, monitor);
             }
         }
-
-
-
         public string Version
         {
             get => Assembly.GetExecutingAssembly().GetName().Version.ToString();
@@ -325,8 +322,6 @@ namespace ScreenTemperature
             SystemEvents.DisplaySettingsChanged += SystemEvents_DisplaySettingsChanged;
 
             InitializeComponent();
-
-
         }
 
         ~MainWindow()
@@ -340,9 +335,6 @@ namespace ScreenTemperature
             _notifyIcon.Visible = false;
             _notifyIcon.Icon.Dispose();
             _notifyIcon.Dispose();
-
-
-
         }
 
         #endregion
@@ -441,8 +433,6 @@ namespace ScreenTemperature
             {
                 _notifyIcon.Visible = true;
                 Hide();
-
-
             }
         }
 
@@ -598,8 +588,6 @@ namespace ScreenTemperature
             }
 
             WindowState = WindowState.Minimized;
-
-
         }
 
         /// <summary>
@@ -658,8 +646,6 @@ namespace ScreenTemperature
                 Configs.Move(SelectedConfigIndex, SelectedConfigIndex - 1);
             }
         }
-
-
         private unsafe void OnClickButtonSaveConfig(object obj)
         {
             var configToModify = Configs.FirstOrDefault(x => x.ConfigName == TextNameConfig);
@@ -781,8 +767,6 @@ namespace ScreenTemperature
                 if (green < 0) green = 0;
                 if (green > 255) green = 255;
             }
-
-
             if (temperature >= 66)
             {
                 blue = 255;
@@ -843,9 +827,7 @@ namespace ScreenTemperature
                     if (monitor.CustomColorSliderValue >= bmp.Width)
                         monitor.CustomColorSliderValue = bmp.Width - 1;
 
-
                     var clr = bmp.GetPixel(monitor.CustomColorSliderValue, 0);
-
                     red = clr.R;
                     green = clr.G;
                     blue = clr.B;
