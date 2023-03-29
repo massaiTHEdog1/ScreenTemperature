@@ -35,6 +35,9 @@ export class Screen implements ScreenDto
     /** Returns the Y position in percentages. */
     public YPercentage : number = 0;
 
+    /** Returns if the screen is selected. */
+    public IsSelected : boolean = false;
+
     constructor(model: Partial<Screen>)
     {
         Object.assign(this, model);
