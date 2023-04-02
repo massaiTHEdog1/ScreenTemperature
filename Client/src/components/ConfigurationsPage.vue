@@ -17,7 +17,7 @@ onMounted(() => {
 <template>
   <div class="h-full flex flex-col">
     <div style="max-height: 40%; min-height: 200px; background-color: red; padding: 50px;">
-      <ScreensViewer :screens="screens"></ScreensViewer>
+      <ScreensViewer :screens="screens" style="width: 100%; height: 100%"></ScreensViewer>
     </div>
     <div class="flex-1" style="background-color: green;"></div>
   </div>

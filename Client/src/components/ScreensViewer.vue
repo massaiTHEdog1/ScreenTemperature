@@ -3,25 +3,46 @@ import { defineComponent, PropType, ref } from 'vue'
 import { Screen } from "../models/screen";
 
 export default defineComponent({
+  expose: ["Refresh"],
   props: {
-    screens: { type: Object as PropType<Screen[]>, required: true },
+    /** A list of screen to display. */
+    screens: { type: Array as PropType<Screen[]>, required: true },
+    /** Enable multi-selection. */
+    allowMultipleSelection: { type: Boolean, required: false, default: true },
+    /** If true, a click acts as a toggle. */
+    clickToggle: { type: Boolean, required: false, default: false },
+    /** Allow an empty selection. */
+    allowEmptySelection: { type: Boolean, required: false, default: false }
   },
+  emits: ["selectionChanged"],
   data() {
     return {
-      aspectRatio: ref("1/1"),
+      aspectRatio: ref<string>(),
     }
   },
   mounted() {
-    this.GenerateView();
+    this.Refresh();
+
+    this.SelectFirstScreen();
   },
   watch: {
     screens(newvalue, oldValue) {
-      this.GenerateView();
+      this.Refresh();
+
+      this.SelectFirstScreen();
     }
   },
   methods: {
-    GenerateView() {
-      if (!this.screens)
+    SelectFirstScreen() {
+      if (!this.allowEmptySelection && this.screens.length > 0)
+        this.Select(this.screens[0]);
+    },
+    /** Refreshes the component. */
+    Refresh() {
+
+      this.aspectRatio = undefined;
+
+      if (this.screens.length == 0)
         return;
 
       let rectangleLeftBorderPosition = 0;
@@ -69,14 +90,65 @@ export default defineComponent({
 
       this.aspectRatio = `${rectangleWidth} / ${rectangleHeight}`;
     },
+    /** 
+     * Deselect a screen.
+     * 
+     * Cannot deselect a screen if it is the only selected screen.
+     * @param screen The screen we want to deselect.
+     */
+    Deselect(screen: Screen) {
+      // A screen cannot be deselected if it is the only selected screen
+      if (!this.allowEmptySelection && this.screens.filter(x => x.IsSelected)?.length == 1 && screen.DevicePath == this.screens.find(x => x.IsSelected)!.DevicePath)
+        return;
+
+      screen.IsSelected = false;
+    },
+    /** Select a screen. */
+    Select(screen: Screen) {
+
+      screen.IsSelected = true;
+
+      if (!this.allowMultipleSelection)
+        this.DeselectAllScreensExcept(screen);
+
+    },
+    /** Toggle selection of a screen. */
+    ToggleSelection(screen: Screen) {
+      if (screen.IsSelected)
+        this.Deselect(screen);
+      else
+        this.Select(screen);
+    },
+    DeselectAllScreensExcept(screenToKeepSelected: Screen) {
+      this.screens.forEach(screen => {
+        if (screen.DevicePath != screenToKeepSelected.DevicePath)
+          this.Deselect(screen);
+      });
+    },
+    GetSimplifiedArray() {
+      return this.screens.map(x => ({ id: x.DevicePath, isSelected: x.IsSelected }));
+    },
     onScreenClick(event: MouseEvent, screen: Screen) {
 
-      if(!event.ctrlKey)
-      {
-        this.screens.forEach(x => x.IsSelected = false);
+      const before = JSON.stringify(this.GetSimplifiedArray());
+
+      if (!this.clickToggle) {
+        if (!event.ctrlKey) {
+          this.Select(screen);
+          // Deselect all screens except one.
+          this.DeselectAllScreensExcept(screen);
+        }
+        else// If Ctrl key is pressed
+        {
+          this.ToggleSelection(screen);
+        }
+      }
+      else {
+        this.ToggleSelection(screen);
       }
 
-      screen.IsSelected = !screen.IsSelected;
+      if (before != JSON.stringify(this.GetSimplifiedArray()))
+        this.$emit("selectionChanged", this.screens.filter(x => x.IsSelected));
     }
   }
 });
@@ -84,14 +156,15 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="h-full w-full">
-    <div class="max-w-full max-h-full m-auto relative" style="background-color: blue;" :style="{ aspectRatio }">
-      <div class="screen flex items-center justify-center" v-for="screen in screens" @click="$event => onScreenClick($event, screen)"
-        :style="{ width: `${screen.WidthPercentage}%`, height: `${screen.HeightPercentage}%`, left: `${screen.XPercentage}%`, top: `${screen.YPercentage}%` }"
-        :class="{ 'selected': screen.IsSelected }">
-        {{ screen.Label }}
-      </div>
+  <div style="position: relative; margin: auto; max-width: 100%; max-height: 100%;" :style="{ aspectRatio }">
+    <div v-if="screens.length > 0" class="screen" v-for="screen in screens" :key="screen.DevicePath"
+      @click="$event => onScreenClick($event, screen)"
+      :style="{ width: `${screen.WidthPercentage}%`, height: `${screen.HeightPercentage}%`, left: `${screen.XPercentage}%`, top: `${screen.YPercentage}%` }"
+      :class="{ 'selected': screen.IsSelected }">
+      {{ screen.Label }}<br />
+      {{ screen.Width }} x {{ screen.Height }}
     </div>
+    <p v-else style="text-align: center;">No screen</p>
   </div>
 </template>
 
@@ -105,6 +178,10 @@ export default defineComponent({
   user-select: none;
   -moz-user-select: none;
   -webkit-user-select: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 .screen:hover {

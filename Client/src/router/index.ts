@@ -1,7 +1,7 @@
 import { createWebHashHistory, createRouter, RouteRecordRaw } from "vue-router";
-import KeyBindings from "../components/KeyBindings.vue";
-import Configurations from "../components/Configurations.vue";
-import Settings from "../components/Settings.vue";
+import KeyBindings from "../components/KeyBindingsPage.vue";
+import Configurations from "../components/ConfigurationsPage.vue";
+import Settings from "../components/SettingsPage.vue";
 import ROUTES from "./constants";
 
 const routes : RouteRecordRaw[] = [

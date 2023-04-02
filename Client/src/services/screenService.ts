@@ -6,7 +6,7 @@ export class ScreenService
     {
         return [
             {
-                DevicePath: "path",
+                DevicePath: "1",
                 Width: 2560,
                 Height: 1440,
                 IsPrimary: true,
@@ -15,7 +15,7 @@ export class ScreenService
                 Y: 0,
             },
             {
-                DevicePath: "path",
+                DevicePath: "2",
                 Width: 1920,
                 Height: 1080,
                 IsPrimary: false,
@@ -24,7 +24,7 @@ export class ScreenService
                 Y: 0,
             },
             {
-                DevicePath: "path",
+                DevicePath: "3",
                 Width: 3840,
                 Height: 2160,
                 IsPrimary: true,
