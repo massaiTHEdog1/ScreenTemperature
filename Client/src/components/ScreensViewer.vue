@@ -14,31 +14,38 @@ export default defineComponent({
     /** Allow an empty selection. */
     allowEmptySelection: { type: Boolean, required: false, default: false }
   },
-  emits: ["selectionChanged"],
+  emits: {
+    selectionChanged(payload: Screen[]){
+      return true;
+    }
+  },
   data() {
     return {
       aspectRatio: ref<string>(),
     }
   },
   mounted() {
-    this.Refresh();
+    this.refresh();
 
-    this.SelectFirstScreen();
+    this.selectFirstScreenIfRequired();
   },
   watch: {
     screens(newvalue, oldValue) {
-      this.Refresh();
+      this.refresh();
 
-      this.SelectFirstScreen();
+      this.selectFirstScreenIfRequired();
     }
   },
   methods: {
-    SelectFirstScreen() {
+    selectFirstScreenIfRequired() {
       if (!this.allowEmptySelection && this.screens.length > 0)
-        this.Select(this.screens[0]);
+      {
+        this.select(this.screens[0]);
+        this.$emit("selectionChanged", [this.screens[0]]);
+      }
     },
     /** Refreshes the component. */
-    Refresh() {
+    refresh() {
 
       this.aspectRatio = undefined;
 
@@ -96,7 +103,7 @@ export default defineComponent({
      * Cannot deselect a screen if it is the only selected screen.
      * @param screen The screen we want to deselect.
      */
-    Deselect(screen: Screen) {
+    deselect(screen: Screen) {
       // A screen cannot be deselected if it is the only selected screen
       if (!this.allowEmptySelection && this.screens.filter(x => x.IsSelected)?.length == 1 && screen.DevicePath == this.screens.find(x => x.IsSelected)!.DevicePath)
         return;
@@ -104,50 +111,50 @@ export default defineComponent({
       screen.IsSelected = false;
     },
     /** Select a screen. */
-    Select(screen: Screen) {
+    select(screen: Screen) {
 
       screen.IsSelected = true;
 
       if (!this.allowMultipleSelection)
-        this.DeselectAllScreensExcept(screen);
+        this.deselectAllScreensExcept(screen);
 
     },
     /** Toggle selection of a screen. */
-    ToggleSelection(screen: Screen) {
+    toggleSelection(screen: Screen) {
       if (screen.IsSelected)
-        this.Deselect(screen);
+        this.deselect(screen);
       else
-        this.Select(screen);
+        this.select(screen);
     },
-    DeselectAllScreensExcept(screenToKeepSelected: Screen) {
+    deselectAllScreensExcept(screenToKeepSelected: Screen) {
       this.screens.forEach(screen => {
         if (screen.DevicePath != screenToKeepSelected.DevicePath)
-          this.Deselect(screen);
+          this.deselect(screen);
       });
     },
-    GetSimplifiedArray() {
+    getSimplifiedArray() {
       return this.screens.map(x => ({ id: x.DevicePath, isSelected: x.IsSelected }));
     },
     onScreenClick(event: MouseEvent, screen: Screen) {
 
-      const before = JSON.stringify(this.GetSimplifiedArray());
+      const before = JSON.stringify(this.getSimplifiedArray());
 
       if (!this.clickToggle) {
         if (!event.ctrlKey) {
-          this.Select(screen);
+          this.select(screen);
           // Deselect all screens except one.
-          this.DeselectAllScreensExcept(screen);
+          this.deselectAllScreensExcept(screen);
         }
         else// If Ctrl key is pressed
         {
-          this.ToggleSelection(screen);
+          this.toggleSelection(screen);
         }
       }
       else {
-        this.ToggleSelection(screen);
+        this.toggleSelection(screen);
       }
 
-      if (before != JSON.stringify(this.GetSimplifiedArray()))
+      if (before != JSON.stringify(this.getSimplifiedArray()))
         this.$emit("selectionChanged", this.screens.filter(x => x.IsSelected));
     }
   }
@@ -174,21 +181,21 @@ export default defineComponent({
   color: white;
   position: absolute;
   border-radius: 5px;
-  border: 1px solid grey;
-  user-select: none;
-  -moz-user-select: none;
-  -webkit-user-select: none;
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
+  border: 1px solid transparent;
+  background-clip: padding-box;
 }
 
 .screen:hover {
   background-color: #454545;
+  border: 2px solid white !important;
 }
 
 .screen.selected {
   background-color: #0078D7;
+  border: 1px solid white;
 }
 </style>

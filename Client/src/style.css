@@ -2,11 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-    :root {
-        --background-dark1: #333333;
-        --background-dark2: #252526;
-        --background-dark3: #1E1E1E;
-        --color-primary: #858585;
-    }
+html{
+  color: white;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+}
+
+select{
+  background-color: #373737;
+  border-radius: 5px;
+  height: 30px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+select:hover{
+  background-color: #3C3C3C;
 }

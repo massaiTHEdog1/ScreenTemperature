@@ -31,7 +31,7 @@ watch(() => route.path, path => {
       </div>
 
     </div>
-    <div class="flex-1 bg-background-dark2">
+    <div class="flex-1" style="background-color: #252526;">
       <router-view />
     </div>
   </div>
@@ -48,7 +48,7 @@ watch(() => route.path, path => {
   flex-direction: column;
   height: 100%;
   width: var(--menu-width);
-  background-color: var(--background-dark1);
+  background-color: #333333;
 }
 
 .menu .menu-item {
@@ -61,7 +61,7 @@ watch(() => route.path, path => {
   justify-content: center;
   align-items: center;
   font-size: 1.4rem;
-  color: var(--color-primary);
+  color: #858585;
 }
 
 .menu .menu-item:hover {

@@ -6,9 +6,9 @@ import App from './App.vue';
 
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import { library } from "@fortawesome/fontawesome-svg-core";
-import { faDisplay, faGear, faKeyboard } from "@fortawesome/free-solid-svg-icons";
+import { faCopy, faDisplay, faGear, faKeyboard, faPen, faPlus, faSave, faTrash } from "@fortawesome/free-solid-svg-icons";
 
-library.add(faKeyboard, faDisplay, faGear);
+library.add(faKeyboard, faDisplay, faGear, faSave, faTrash, faPen, faCopy, faPlus);
 
 //#endregion
 
