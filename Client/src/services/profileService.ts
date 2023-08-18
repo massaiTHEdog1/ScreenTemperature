@@ -81,4 +81,50 @@ export default new (class ProfileService {
 
     return true;
   }
+
+  async SaveProfileAsync(profile: Profile): Promise<Profile> {
+    await new Promise((f) => setTimeout(f, 1000));
+
+    const copy = JSON.parse(JSON.stringify(profile)) as Profile;
+
+    if (copy.Id == 0) {
+      // Generate an incremented id
+      copy.Id = this.mock.reduce(
+        (accumulator, currentValue) =>
+          currentValue.Id > accumulator - 1 ? currentValue.Id : accumulator,
+        0,
+      );
+
+      let configIndex = 1;
+
+      copy.Configurations?.forEach((x) => {
+        x.Id = configIndex;
+        configIndex++;
+      });
+
+      const newLength = this.mock.push(Mapper.MapProfileToProfileDto(copy));
+
+      return Mapper.MapProfileDtoToProfile(this.mock[newLength - 1]);
+    } else {
+      const dto = this.mock.find((x) => x.Id == copy.Id)!;
+
+      let configIndex =
+        dto.Configurations?.reduce(
+          (accumulator, currentValue) =>
+            currentValue.Id > accumulator - 1 ? currentValue.Id : accumulator,
+          1,
+        ) ?? 1;
+
+      copy.Configurations?.forEach((x) => {
+        x.Id = x.Id == 0 ? configIndex : x.Id;
+        configIndex++;
+      });
+
+      const dtoIndex = this.mock.indexOf(dto);
+
+      this.mock[dtoIndex] = Mapper.MapProfileToProfileDto(copy);
+
+      return Mapper.MapProfileDtoToProfile(this.mock[dtoIndex]);
+    }
+  }
 })();

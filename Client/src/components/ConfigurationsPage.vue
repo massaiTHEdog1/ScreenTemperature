@@ -364,6 +364,8 @@ export default defineComponent({
       this.isLoading = false;
     },
     onDuplicateProfileClick() {
+      if (this.isButtonDuplicateDisabled) return;
+
       const duplicatedProfile = JSON.parse(
         JSON.stringify(this.currentProfile),
       ) as Profile;
@@ -376,6 +378,31 @@ export default defineComponent({
 
       this.profiles.push(duplicatedProfile);
       this.currentProfile = duplicatedProfile;
+    },
+    async onSaveProfileClick() {
+      if (this.isButtonSaveDisabled) return;
+      if (this.isLoading) return;
+
+      this.isLoading = true;
+
+      const result = await profileService.SaveProfileAsync(
+        this.currentProfile!,
+      );
+
+      if (result) {
+        // Delete the profile from the list
+        this.profiles.splice(
+          this.profiles.findIndex((x) => x.Id == this.currentProfile?.Id),
+          1,
+        );
+
+        this.profiles.push(result);
+      }
+
+      this.currentProfile = result;
+      this.resetForm();
+
+      this.isLoading = false;
     },
   },
 });
@@ -572,7 +599,11 @@ export default defineComponent({
         </div>
 
         <div class="mt-auto mb-3 flex">
-          <button class="button ml-auto" :disabled="isButtonSaveDisabled">
+          <button
+            class="button ml-auto"
+            :disabled="isButtonSaveDisabled"
+            @click="onSaveProfileClick()"
+          >
             <font-awesome-icon icon="fa-solid fa-save" />
             Save
           </button>
