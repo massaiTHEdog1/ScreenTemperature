@@ -1,13 +1,15 @@
-import { ConfigurationDto, ConfigurationDiscriminator } from "./configurationDto";
+import {
+  ConfigurationDiscriminator,
+  ConfigurationDto,
+} from "./configurationDto";
 
 export class ColorConfigurationDto extends ConfigurationDto {
-    public Discriminator = ConfigurationDiscriminator.ColorConfiguration;
-    public Color : string = "";
+  public Discriminator = ConfigurationDiscriminator.ColorConfiguration;
+  public Color: string = "";
 
-    public constructor(dto?: Partial<ColorConfigurationDto>) {
-        super();
-        
-        if(dto)
-            Object.assign(this, dto);
-    }
+  public constructor(dto?: Partial<ColorConfigurationDto>) {
+    super();
+
+    Object.assign(this, dto);
+  }
 }

@@ -2,14 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-html{
+:root {
+  --color-1: #0078d7;
+}
+
+html {
   color: white;
   user-select: none;
   -moz-user-select: none;
   -webkit-user-select: none;
 }
 
-select{
+select {
   background-color: #373737;
   border-radius: 5px;
   height: 30px;
@@ -17,6 +21,23 @@ select{
   padding-right: 5px;
 }
 
-select:hover{
-  background-color: #3C3C3C;
+select:hover {
+  background-color: #3c3c3c;
+}
+
+.button {
+  height: 30px;
+  line-height: 30px;
+  padding-left: 10px;
+  padding-right: 10px;
+  cursor: pointer;
+  background-color: var(--color-1);
+}
+
+.button:disabled {
+  filter: brightness(0.6);
+}
+
+.button:hover:not(:disabled) {
+  filter: brightness(1.2);
 }
