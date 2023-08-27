@@ -1,7 +1,7 @@
 import { ConfigurationDto } from "./configurations/configurationDto";
 
 export class ProfileDto {
-  public Id: number = 0;
+  public Id: string = "";
   public Label: string = "";
   public Configurations: ConfigurationDto[] = [];
 

@@ -4,8 +4,8 @@ export enum ConfigurationDiscriminator {
 }
 
 export abstract class ConfigurationDto {
-  public abstract Discriminator: ConfigurationDiscriminator;
-  public Id: number = 0;
+  public abstract $type: ConfigurationDiscriminator;
+  public Id: string = "";
   public DevicePath: string = "";
   public Brightness: number = 100;
 

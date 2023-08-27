@@ -3,7 +3,7 @@ import { Screen } from "./screen";
 
 export class Profile {
   /** Returns the identifier. */
-  public Id: number = 0;
+  public Id: string = "";
 
   /** Returns the friendly name. */
   public Label: string = "";

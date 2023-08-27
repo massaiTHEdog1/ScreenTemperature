@@ -1,5 +1,6 @@
 
 using ScreenTemperature.Entities.KeyBindingActions;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ScreenTemperature.Entities;
 
@@ -11,7 +12,8 @@ public class KeyBinding
     /// <summary>
     /// Returns the identifier.
     /// </summary>
-    public int Id { get; set; }
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    public Guid Id { get; set; }
 
     /// <summary>
     /// Returns the actions associated to this binding.

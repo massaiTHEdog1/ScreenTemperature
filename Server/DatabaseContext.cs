@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ScreenTemperature.Entities;
+using ScreenTemperature.Entities.Configurations;
 using ScreenTemperature.Entities.KeyBindingActions;
 using Path = System.IO.Path;
 
@@ -9,12 +10,19 @@ public class DatabaseContext : DbContext
 {
     private readonly IWebHostEnvironment _webHostEnvironment;
 
-    public DbSet<Configuration> Configurations { get; set; }
+    public DbSet<Profile> Profiles { get; set; }
+
+    public DbSet<KeyBindingAction> KeyBindingActions { get; set; }
     public DbSet<ApplyConfiguration> ApplyConfigurationActions { get; set; }
     public DbSet<DecreaseBrightnessBy> DecreaseBrightnessByActions { get; set; }
     public DbSet<IncreaseBrightnessBy> IncreaseBrightnessByActions { get; set; }
     public DbSet<SetBrightnessTo> SetBrightnessToActions { get; set; }
+
     public DbSet<KeyBinding> KeyBindings { get; set; }
+
+    public DbSet<Configuration> Configurations { get; set; }
+    public DbSet<TemperatureConfiguration> TemperatureConfigurations { get; set; }
+    public DbSet<ColorConfiguration> ColorConfigurations { get; set; }
 
     public string DbPath { get; }
 
@@ -62,5 +70,6 @@ public class DatabaseContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<KeyBindingAction>().UseTpcMappingStrategy();
+        modelBuilder.Entity<Configuration>().UseTpcMappingStrategy();
     }
 }

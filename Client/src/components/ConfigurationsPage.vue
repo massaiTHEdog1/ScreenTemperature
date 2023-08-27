@@ -66,7 +66,7 @@ export default defineComponent({
 
     // Load the screens and the profiles
     this.screens = ScreenService.GetScreens().map((x) => new Screen(x));
-    this.profiles = await ProfileService.GetProfilesAsync();
+    this.profiles = await ProfileService.ListProfilesAsync();
 
     // If there is at least one saved profile
     if (this.profiles.length > 0) {
@@ -83,7 +83,7 @@ export default defineComponent({
     isProfileNewOrHasChanged(profile: Profile, profiles: Profile[]) {
       const originalProfile = profiles.find((x) => x.Id == profile.Id);
       return (
-        profile.Id == 0 ||
+        profile.Id == "" ||
         JSON.stringify(profile) != JSON.stringify(originalProfile)
       );
     },
@@ -160,7 +160,7 @@ export default defineComponent({
         );
 
         // If this profile is a new one
-        if (this.currentProfile.Id == 0 && confirmation) {
+        if (this.currentProfile.Id == "" && confirmation) {
           // Delete the profile from the list
           this.profiles.splice(this.profiles.length - 1, 1);
         }
@@ -337,7 +337,7 @@ export default defineComponent({
       );
 
       if (confirmation) {
-        if (this.currentProfile.Id != 0) {
+        if (this.currentProfile.Id != "") {
           const result = await profileService.DeleteProfileAsync(
             this.currentProfile.Id,
           );
@@ -356,10 +356,10 @@ export default defineComponent({
             1,
           );
         }
-      }
 
-      this.currentProfile = undefined;
-      this.resetForm();
+        this.currentProfile = undefined;
+        this.resetForm();
+      }
 
       this.isLoading = false;
     },
@@ -370,10 +370,10 @@ export default defineComponent({
         JSON.stringify(this.currentProfile),
       ) as Profile;
 
-      duplicatedProfile.Id = 0;
+      duplicatedProfile.Id = "";
       duplicatedProfile.Label = "Duplicated profile";
       duplicatedProfile.Configurations.forEach((x) => {
-        x.Id = 0;
+        x.Id = "";
       });
 
       this.profiles.push(duplicatedProfile);

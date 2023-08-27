@@ -1,8 +1,9 @@
+using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
-using ScreenTemperature.Data;
 using ScreenTemperature.Entities.KeyBindingActions;
 using ScreenTemperature.Middlewares;
 using ScreenTemperature.Services;
+using System.Text.Json;
 using System.Windows.Forms;
 
 namespace ScreenTemperature;
@@ -19,26 +20,27 @@ internal class Program
         builder.Services.AddControllers();
 
         builder.Services.AddScoped<IScreenService, ScreenService>();
-        builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
+        builder.Services.AddScoped<IProfileService, ProfileService>();
         builder.Services.AddScoped<IOptionsService, OptionsService>();
         builder.Services.AddScoped<IKeyBindingService, KeyBindingService>();
 
         builder.Services.AddDbContext<DatabaseContext>();
 
-        builder.Services.AddGraphQLServer()
-            //.RegisterDbContext<DatabaseContext>()
-            .AddQueryType<Query>()
-            .AddMutationType<Mutation>()
-            #region Add polymorphed classes -> We have to explicitly register the interface implementations
-            .AddObjectType<ApplyConfiguration>()
-            .AddObjectType<DecreaseBrightnessBy>()
-            .AddObjectType<IncreaseBrightnessBy>()
-            .AddObjectType<SetBrightnessTo>()
-            #endregion
-            .AddProjections()
-            .AddFiltering();
+        builder.Services.AddFastEndpoints();
 
         #endregion
+
+        if (builder.Environment.IsDevelopment())
+        { 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy(name: "devCORS",
+                                  policy =>
+                                  {
+                                      policy.WithOrigins("http://localhost:5173");
+                                  });
+            });
+        }
 
         var app = builder.Build();
 
@@ -48,8 +50,6 @@ internal class Program
             {
                 var databaseContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
                 databaseContext.Database.Migrate();
-
-                var test = databaseContext.KeyBindings.Where(x => x.Id == 1).ToList();
             }
             catch (Exception ex)
             {
@@ -72,7 +72,15 @@ internal class Program
 
         app.UseAuthorization();
 
-        app.MapGraphQL();
+        app.UseFastEndpoints(c => {
+            // For PascalCase
+            c.Serializer.Options.PropertyNamingPolicy = null;
+        });
+
+        if (builder.Environment.IsDevelopment())
+        {
+            app.UseCors("devCORS");
+        }
 
         app.Run();
     }

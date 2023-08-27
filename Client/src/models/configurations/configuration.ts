@@ -5,7 +5,7 @@ export enum ConfigurationDiscriminator {
 
 export abstract class Configuration {
   public abstract Discriminator: ConfigurationDiscriminator;
-  public Id: number = 0;
+  public Id: string = "";
   public DevicePath: string;
   public Brightness: number = 100;
 

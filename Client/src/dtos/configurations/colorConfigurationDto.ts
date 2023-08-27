@@ -4,7 +4,7 @@ import {
 } from "./configurationDto";
 
 export class ColorConfigurationDto extends ConfigurationDto {
-  public Discriminator = ConfigurationDiscriminator.ColorConfiguration;
+  public $type = ConfigurationDiscriminator.ColorConfiguration;
   public Color: string = "";
 
   public constructor(dto?: Partial<ColorConfigurationDto>) {

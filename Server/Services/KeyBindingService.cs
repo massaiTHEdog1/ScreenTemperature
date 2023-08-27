@@ -10,17 +10,17 @@ public interface IKeyBindingService
     IQueryable<KeyBinding> GetKeyBindings();
 
     /// <summary>
-    ///  Create a <see cref="Configuration"/>
+    ///  Create a <see cref="Profile"/>
     /// </summary>
     Task<KeyBinding> AddKeyBindingAsync(KeyBinding keyBinding);
 }
 
 public class KeyBindingService : IKeyBindingService
 {
-    private readonly ILogger<ConfigurationService> _logger;
+    private readonly ILogger<ProfileService> _logger;
     private readonly DatabaseContext _databaseContext;
 
-    public KeyBindingService(ILogger<ConfigurationService> logger, DatabaseContext databaseContext)
+    public KeyBindingService(ILogger<ProfileService> logger, DatabaseContext databaseContext)
     {
         _logger = logger;
         _databaseContext = databaseContext;

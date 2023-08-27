@@ -60,13 +60,11 @@ export abstract class Mapper {
   public static MapConfigurationDtoToConfiguration(
     dto: ConfigurationDto,
   ): Configuration {
-    if (dto.Discriminator == ConfigurationDiscriminator.ColorConfiguration)
+    if (dto.$type == ConfigurationDiscriminator.ColorConfiguration)
       return this.MapColorConfigurationDtoToColorConfiguration(
         dto as ColorConfigurationDto,
       );
-    if (
-      dto.Discriminator == ConfigurationDiscriminator.TemperatureConfiguration
-    )
+    if (dto.$type == ConfigurationDiscriminator.TemperatureConfiguration)
       return this.MapTemperatureConfigurationDtoToTemperatureConfiguration(
         dto as TemperatureConfigurationDto,
       );
@@ -79,7 +77,7 @@ export abstract class Mapper {
     return new ColorConfigurationDto({
       Color: model.Color,
       DevicePath: model.DevicePath,
-      Discriminator: model.Discriminator,
+      $type: model.Discriminator,
       Id: model.Id,
       Brightness: model.Brightness,
     });
@@ -90,7 +88,7 @@ export abstract class Mapper {
     return new ColorConfiguration({
       Color: dto.Color,
       DevicePath: dto.DevicePath,
-      Discriminator: dto.Discriminator,
+      Discriminator: dto.$type,
       Id: dto.Id,
       Brightness: dto.Brightness,
     });
@@ -101,7 +99,7 @@ export abstract class Mapper {
   ): TemperatureConfigurationDto {
     return new TemperatureConfigurationDto({
       DevicePath: model.DevicePath,
-      Discriminator: model.Discriminator,
+      $type: model.Discriminator,
       Id: model.Id,
       Intensity: model.Intensity,
       Brightness: model.Brightness,
@@ -113,7 +111,7 @@ export abstract class Mapper {
   ): TemperatureConfiguration {
     return new TemperatureConfiguration({
       DevicePath: dto.DevicePath,
-      Discriminator: dto.Discriminator,
+      Discriminator: dto.$type,
       Id: dto.Id,
       Intensity: dto.Intensity,
       Brightness: dto.Brightness,

@@ -1,5 +1,4 @@
 
-using ScreenTemperature.Exceptions;
 
 namespace ScreenTemperature.Middlewares;
 
@@ -21,11 +20,6 @@ public class ExceptionMiddleware
         try
         {
             await _next.Invoke(context);
-        }
-        catch (BadRequestException ex)
-        {
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            await context.Response.WriteAsJsonAsync(new { message = ex.Message });
         }
         catch (Exception ex)
         {
