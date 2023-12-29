@@ -1,10 +1,8 @@
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
-using ScreenTemperature.Entities.KeyBindingActions;
 using ScreenTemperature.Middlewares;
 using ScreenTemperature.Services;
-using System.Text.Json;
-using System.Windows.Forms;
+using FastEndpoints.Swagger;
 
 namespace ScreenTemperature;
 
@@ -26,7 +24,10 @@ internal class Program
 
         builder.Services.AddDbContext<DatabaseContext>();
 
-        builder.Services.AddFastEndpoints();
+        builder.Services.AddFastEndpoints().SwaggerDocument(o => {
+            o.ShortSchemaNames = true;
+            o.AutoTagPathSegmentIndex = 2;
+        });
 
         #endregion
 
@@ -43,6 +44,8 @@ internal class Program
         }
 
         var app = builder.Build();
+
+        HotKeyManager.Init(app);
 
         using (var scope = app.Services.CreateScope())
         {
@@ -72,10 +75,7 @@ internal class Program
 
         app.UseAuthorization();
 
-        app.UseFastEndpoints(c => {
-            // For PascalCase
-            c.Serializer.Options.PropertyNamingPolicy = null;
-        });
+        app.UseFastEndpoints().UseSwaggerGen();
 
         if (builder.Environment.IsDevelopment())
         {

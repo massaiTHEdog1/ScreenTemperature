@@ -15,12 +15,15 @@ namespace ScreenTemperature.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.4");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
 
             modelBuilder.Entity("ScreenTemperature.Entities.Configurations.Configuration", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("ApplyBrightness")
+                        .HasColumnType("INTEGER");
 
                     b.Property<byte>("Brightness")
                         .HasColumnType("INTEGER");
@@ -36,9 +39,9 @@ namespace ScreenTemperature.Migrations
 
                     b.HasIndex("ProfileId");
 
-                    b.ToTable((string)null);
+                    b.ToTable("Configurations");
 
-                    b.UseTpcMappingStrategy();
+                    b.UseTptMappingStrategy();
                 });
 
             modelBuilder.Entity("ScreenTemperature.Entities.KeyBinding", b =>
@@ -52,9 +55,8 @@ namespace ScreenTemperature.Migrations
                     b.Property<bool>("Control")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Key")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("KeyCode")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("Shift")
                         .HasColumnType("INTEGER");
@@ -76,9 +78,9 @@ namespace ScreenTemperature.Migrations
 
                     b.HasIndex("KeyBindingId");
 
-                    b.ToTable((string)null);
+                    b.ToTable("KeyBindingActions");
 
-                    b.UseTpcMappingStrategy();
+                    b.UseTptMappingStrategy();
                 });
 
             modelBuilder.Entity("ScreenTemperature.Entities.Profile", b =>
@@ -99,6 +101,9 @@ namespace ScreenTemperature.Migrations
                 {
                     b.HasBaseType("ScreenTemperature.Entities.Configurations.Configuration");
 
+                    b.Property<bool>("ApplyColor")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Color")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -110,52 +115,25 @@ namespace ScreenTemperature.Migrations
                 {
                     b.HasBaseType("ScreenTemperature.Entities.Configurations.Configuration");
 
+                    b.Property<bool>("ApplyIntensity")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Intensity")
                         .HasColumnType("INTEGER");
 
                     b.ToTable("TemperatureConfigurations");
                 });
 
-            modelBuilder.Entity("ScreenTemperature.Entities.KeyBindingActions.ApplyConfiguration", b =>
+            modelBuilder.Entity("ScreenTemperature.Entities.KeyBindingActions.ApplyProfileAction", b =>
                 {
                     b.HasBaseType("ScreenTemperature.Entities.KeyBindingActions.KeyBindingAction");
 
-                    b.Property<Guid>("ConfigurationId")
+                    b.Property<Guid>("ProfileId")
                         .HasColumnType("TEXT");
 
-                    b.HasIndex("ConfigurationId");
+                    b.HasIndex("ProfileId");
 
-                    b.ToTable("ApplyConfigurationActions");
-                });
-
-            modelBuilder.Entity("ScreenTemperature.Entities.KeyBindingActions.DecreaseBrightnessBy", b =>
-                {
-                    b.HasBaseType("ScreenTemperature.Entities.KeyBindingActions.KeyBindingAction");
-
-                    b.Property<int>("Value")
-                        .HasColumnType("INTEGER");
-
-                    b.ToTable("DecreaseBrightnessByActions");
-                });
-
-            modelBuilder.Entity("ScreenTemperature.Entities.KeyBindingActions.IncreaseBrightnessBy", b =>
-                {
-                    b.HasBaseType("ScreenTemperature.Entities.KeyBindingActions.KeyBindingAction");
-
-                    b.Property<int>("Value")
-                        .HasColumnType("INTEGER");
-
-                    b.ToTable("IncreaseBrightnessByActions");
-                });
-
-            modelBuilder.Entity("ScreenTemperature.Entities.KeyBindingActions.SetBrightnessTo", b =>
-                {
-                    b.HasBaseType("ScreenTemperature.Entities.KeyBindingActions.KeyBindingAction");
-
-                    b.Property<int>("Value")
-                        .HasColumnType("INTEGER");
-
-                    b.ToTable("SetBrightnessToActions");
+                    b.ToTable("ApplyProfileActions");
                 });
 
             modelBuilder.Entity("ScreenTemperature.Entities.Configurations.Configuration", b =>
@@ -180,15 +158,39 @@ namespace ScreenTemperature.Migrations
                     b.Navigation("KeyBinding");
                 });
 
-            modelBuilder.Entity("ScreenTemperature.Entities.KeyBindingActions.ApplyConfiguration", b =>
+            modelBuilder.Entity("ScreenTemperature.Entities.Configurations.ColorConfiguration", b =>
                 {
-                    b.HasOne("ScreenTemperature.Entities.Profile", "Configuration")
-                        .WithMany()
-                        .HasForeignKey("ConfigurationId")
+                    b.HasOne("ScreenTemperature.Entities.Configurations.Configuration", null)
+                        .WithOne()
+                        .HasForeignKey("ScreenTemperature.Entities.Configurations.ColorConfiguration", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ScreenTemperature.Entities.Configurations.TemperatureConfiguration", b =>
+                {
+                    b.HasOne("ScreenTemperature.Entities.Configurations.Configuration", null)
+                        .WithOne()
+                        .HasForeignKey("ScreenTemperature.Entities.Configurations.TemperatureConfiguration", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ScreenTemperature.Entities.KeyBindingActions.ApplyProfileAction", b =>
+                {
+                    b.HasOne("ScreenTemperature.Entities.KeyBindingActions.KeyBindingAction", null)
+                        .WithOne()
+                        .HasForeignKey("ScreenTemperature.Entities.KeyBindingActions.ApplyProfileAction", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Configuration");
+                    b.HasOne("ScreenTemperature.Entities.Profile", "Profile")
+                        .WithMany("ApplyProfileActions")
+                        .HasForeignKey("ProfileId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Profile");
                 });
 
             modelBuilder.Entity("ScreenTemperature.Entities.KeyBinding", b =>
@@ -198,6 +200,8 @@ namespace ScreenTemperature.Migrations
 
             modelBuilder.Entity("ScreenTemperature.Entities.Profile", b =>
                 {
+                    b.Navigation("ApplyProfileActions");
+
                     b.Navigation("Configurations");
                 });
 #pragma warning restore 612, 618

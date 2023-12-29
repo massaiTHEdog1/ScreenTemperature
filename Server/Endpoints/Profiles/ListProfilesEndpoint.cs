@@ -1,8 +1,9 @@
 using FastEndpoints;
+using Microsoft.AspNetCore.Http.HttpResults;
 using ScreenTemperature.DTOs;
 using ScreenTemperature.Services;
 
-public class ListProfilesEndpoint : EndpointWithoutRequest<IList<ProfileDto>>
+public class ListProfilesEndpoint : EndpointWithoutRequest<Results<Ok<IList<ProfileDto>>, BadRequest<APIErrorResponseDto>>>
 {
     private readonly IProfileService _profileService;
 
@@ -13,14 +14,16 @@ public class ListProfilesEndpoint : EndpointWithoutRequest<IList<ProfileDto>>
 
     public override void Configure()
     {
-        Get("/api/profiles/list");
+        Get("/api/profiles");
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task<Results<Ok<IList<ProfileDto>>, BadRequest<APIErrorResponseDto>>> ExecuteAsync(CancellationToken ct)
     {
-        var profiles = await _profileService.ListProfilesAsync(ct);
+        var result = await _profileService.ListProfilesAsync(ct);
 
-        await SendAsync(profiles, cancellation: ct);
+        if (!result.Success) return TypedResults.BadRequest(new APIErrorResponseDto(result.Errors));
+
+        return TypedResults.Ok(result.Data);
     }
 }

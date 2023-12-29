@@ -5,40 +5,8 @@ namespace ScreenTemperature.Mappers
 {
     public static class ConfigurationMapperExtensions
     {
-        public static Configuration ToEntity(this ConfigurationDto dto)
-        {
-            if(dto == null) throw new ArgumentNullException(nameof(dto));
-
-            if(dto is TemperatureConfigurationDto temperatureConfigurationDto)
-            {
-                return new TemperatureConfiguration()
-                {
-                    Id = temperatureConfigurationDto.Id,
-                    DevicePath = temperatureConfigurationDto.DevicePath,
-                    Intensity = temperatureConfigurationDto.Intensity,
-                    Brightness = temperatureConfigurationDto.Brightness,
-                };
-            }
-            else if(dto is ColorConfigurationDto colorConfigurationDto)
-            {
-                return new ColorConfiguration()
-                {
-                    Id = colorConfigurationDto.Id,
-                    DevicePath = colorConfigurationDto.DevicePath,
-                    Color = colorConfigurationDto.Color,
-                    Brightness = colorConfigurationDto.Brightness,
-                };
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-        }
-
         public static ConfigurationDto ToDto(this Configuration entity)
         {
-            if (entity == null) throw new ArgumentNullException(nameof(entity));
-
             if (entity is TemperatureConfiguration temperatureConfiguration)
             {
                 return new TemperatureConfigurationDto()
@@ -47,6 +15,8 @@ namespace ScreenTemperature.Mappers
                     DevicePath = temperatureConfiguration.DevicePath,
                     Intensity = temperatureConfiguration.Intensity,
                     Brightness = temperatureConfiguration.Brightness,
+                    ApplyBrightness = temperatureConfiguration.ApplyBrightness,
+                    ApplyIntensity = temperatureConfiguration.ApplyIntensity,
                 };
             }
             else if (entity is ColorConfiguration colorConfiguration)
@@ -57,6 +27,8 @@ namespace ScreenTemperature.Mappers
                     DevicePath = colorConfiguration.DevicePath,
                     Color = colorConfiguration.Color,
                     Brightness = colorConfiguration.Brightness,
+                    ApplyBrightness = colorConfiguration.ApplyBrightness,
+                    ApplyColor = colorConfiguration.ApplyColor,
                 };
             }
             else

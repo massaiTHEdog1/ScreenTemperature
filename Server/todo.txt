@@ -1,0 +1,3 @@
+-Update options
+-Apply first profile at startup
+-Register hotkey with different id

@@ -13,10 +13,10 @@ public class DatabaseContext : DbContext
     public DbSet<Profile> Profiles { get; set; }
 
     public DbSet<KeyBindingAction> KeyBindingActions { get; set; }
-    public DbSet<ApplyConfiguration> ApplyConfigurationActions { get; set; }
-    public DbSet<DecreaseBrightnessBy> DecreaseBrightnessByActions { get; set; }
-    public DbSet<IncreaseBrightnessBy> IncreaseBrightnessByActions { get; set; }
-    public DbSet<SetBrightnessTo> SetBrightnessToActions { get; set; }
+    public DbSet<ApplyProfileAction> ApplyProfileActions { get; set; }
+    //public DbSet<DecreaseBrightnessBy> DecreaseBrightnessByActions { get; set; }
+    //public DbSet<IncreaseBrightnessBy> IncreaseBrightnessByActions { get; set; }
+    //public DbSet<SetBrightnessTo> SetBrightnessToActions { get; set; }
 
     public DbSet<KeyBinding> KeyBindings { get; set; }
 
@@ -69,7 +69,8 @@ public class DatabaseContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<KeyBindingAction>().UseTpcMappingStrategy();
-        modelBuilder.Entity<Configuration>().UseTpcMappingStrategy();
+        modelBuilder.Entity<KeyBindingAction>().UseTptMappingStrategy();
+        modelBuilder.Entity<Configuration>().UseTptMappingStrategy();
+        modelBuilder.Entity<ApplyProfileAction>().HasOne(p => p.Profile).WithMany(x => x.ApplyProfileActions).OnDelete(DeleteBehavior.NoAction);
     }
 }

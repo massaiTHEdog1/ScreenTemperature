@@ -3,24 +3,24 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using ScreenTemperature.DTOs;
 using ScreenTemperature.Services;
 
-public class DeleteProfileEndpoint : EndpointWithoutRequest<Results<Ok, BadRequest<APIErrorResponseDto>>>
+public class DeleteKeyBindingEndpoint : EndpointWithoutRequest<Results<Ok, BadRequest<APIErrorResponseDto>>>
 {
-    private readonly IProfileService _profileService;
+    private readonly IKeyBindingService _keyBindingService;
 
-    public DeleteProfileEndpoint(IProfileService profileService)
+    public DeleteKeyBindingEndpoint(IKeyBindingService keyBindingService)
     {
-        _profileService = profileService;
+        _keyBindingService = keyBindingService;
     }
 
     public override void Configure()
     {
-        Delete("/api/profiles/{Id}");
+        Delete("/api/keybindings/{Id}");
         AllowAnonymous();
     }
 
     public override async Task<Results<Ok, BadRequest<APIErrorResponseDto>>> ExecuteAsync(CancellationToken ct)
     {
-        var result = await _profileService.DeleteProfileAsync(Route<Guid>("Id"), ct);
+        var result = await _keyBindingService.DeleteKeyBindingAsync(Route<Guid>("Id"), ct);
 
         if (!result.Success) return TypedResults.BadRequest(new APIErrorResponseDto(result.Errors));
 

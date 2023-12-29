@@ -23,7 +23,7 @@ public class KeyBinding
     /// <summary>
     /// Return the key that executes the <see cref="Actions"/>.
     /// </summary>
-    public string Key { get; set; }
+    public int KeyCode { get; set; }
 
     /// <summary>
     /// Returns whether the Alt key should be pressed.
