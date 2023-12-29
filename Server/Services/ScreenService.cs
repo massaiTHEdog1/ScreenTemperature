@@ -2,6 +2,7 @@
 using ScreenTemperature.DTOs;
 using ScreenTemperature.Entities;
 using ScreenTemperature.Mappers;
+using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
 
@@ -316,7 +317,17 @@ public class ScreenService : IScreenService
 
                 foreach(var physicalMonitor in physicalMonitors)
                 {
-                    SetMonitorBrightness(physicalMonitor.hPhysicalMonitor, (uint)brightness);
+                    uint min = 0, max = 0, current = 0;
+
+                    // todo : need some cache
+                    if (!GetMonitorBrightness(physicalMonitor.hPhysicalMonitor, ref min, ref current, ref max)) continue;
+
+                    // calculate maximum when minimum is 0
+                    var maximum = max-min;
+
+                    var valueToApply = (uint)brightness * maximum / 100 + min;
+
+                    SetMonitorBrightness(physicalMonitor.hPhysicalMonitor, valueToApply);
                 }
 
                 DestroyPhysicalMonitors(numberOfPhysicalMonitors, physicalMonitors);
@@ -329,5 +340,40 @@ public class ScreenService : IScreenService
         {
             Success = true,
         };
+    }
+
+    public void Test()
+    {
+        var display = WindowsDisplayAPI.Display.GetDisplays().First();
+
+        var monitorsHandle = new List<IntPtr>();
+
+        EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero,
+        delegate (IntPtr hMonitor, IntPtr hdcMonitor, ref Rect lprcMonitor, IntPtr dwData)
+        {
+            monitorsHandle.Add(hMonitor);
+            return true;
+        }, IntPtr.Zero);
+
+        uint min = 0, max = 0, current = 0;
+
+        MonitorInfo monitorInfo = new MonitorInfo
+        {
+            Size = (uint)Marshal.SizeOf(typeof(MonitorInfo))
+        };
+
+        GetMonitorInfo(monitorsHandle[1], ref monitorInfo);
+        
+
+        uint numberOfPhysicalMonitors;
+        GetNumberOfPhysicalMonitorsFromHMONITOR(monitorsHandle[1], out numberOfPhysicalMonitors);
+
+        var monitors = new PHYSICAL_MONITOR[numberOfPhysicalMonitors];
+        GetPhysicalMonitorsFromHMONITOR(monitorsHandle[1], numberOfPhysicalMonitors, monitors);
+        GetMonitorBrightness(monitors[0].hPhysicalMonitor, ref min, ref current, ref max);
+
+        var a = DestroyPhysicalMonitors(numberOfPhysicalMonitors, monitors);
+
+        Debugger.Break();
     }
 }
