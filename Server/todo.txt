@@ -1,2 +1,3 @@
 -Update options
 -Apply first profile at startup
+-Add icon in system tray

@@ -237,6 +237,11 @@ public class ProfileService : IProfileService
 
         foreach (var configuration in configurationsToApply)
         {
+            if(configuration.ApplyBrightness)
+            {
+                _screenService.ApplyBrightnessToScreen(configuration.Brightness, configuration.DevicePath);
+            }
+
             if (configuration is TemperatureConfiguration temperatureConfiguration)
             {
                 if (!temperatureConfiguration.ApplyIntensity) continue;
