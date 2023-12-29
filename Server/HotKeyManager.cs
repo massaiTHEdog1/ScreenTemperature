@@ -59,8 +59,8 @@ namespace ScreenTemperature
         }
 
         private WebApplication _app;
-        private BlockingCollection<(uint virtualKeyCode, uint mask, TaskCompletionSource<bool> taskCompletionSource)> _hotkeysToRegister = new BlockingCollection<(uint virtualKeyCode, uint mask, TaskCompletionSource<bool> taskCompletionSource)>();
-        private BlockingCollection<(uint virtualKeyCode, TaskCompletionSource<bool> taskCompletionSource)> _hotkeysToUnregister = new BlockingCollection<(uint virtualKeyCode, TaskCompletionSource<bool> taskCompletionSource)>();
+        private BlockingCollection<(uint virtualKeyCode, bool alt, bool control, bool shift, TaskCompletionSource<bool> taskCompletionSource)> _hotkeysToRegister = new BlockingCollection<(uint virtualKeyCode, bool alt, bool control, bool shift, TaskCompletionSource<bool> taskCompletionSource)>();
+        private BlockingCollection<(uint virtualKeyCode, bool alt, bool control, bool shift, TaskCompletionSource<bool> taskCompletionSource)> _hotkeysToUnregister = new BlockingCollection<(uint virtualKeyCode, bool alt, bool control, bool shift, TaskCompletionSource<bool> taskCompletionSource)>();
 
         public static void Init(WebApplication app)
         {
@@ -97,7 +97,7 @@ namespace ScreenTemperature
                 {
                     var keyCodeToUnregister = _hotkeysToUnregister.Take();
 
-                    UnregisterHotKey(IntPtr.Zero, (int)keyCodeToUnregister.virtualKeyCode);
+                    UnregisterHotKey(IntPtr.Zero, GenerateHotKeyId(keyCodeToUnregister.virtualKeyCode, keyCodeToUnregister.alt, keyCodeToUnregister.control, keyCodeToUnregister.shift));
 
                     // send result
                     keyCodeToUnregister.taskCompletionSource.SetResult(true);
@@ -108,7 +108,11 @@ namespace ScreenTemperature
                 {
                     var keyCodeToRegister = _hotkeysToRegister.Take();
 
-                    var hotkeyRegistered = RegisterHotKey(IntPtr.Zero, (int)keyCodeToRegister.virtualKeyCode, keyCodeToRegister.mask, keyCodeToRegister.virtualKeyCode);
+                    var mask = keyCodeToRegister.alt ? (uint)KeyModifiers.Alt : 0;
+                    mask = mask | (keyCodeToRegister.control ? (uint)KeyModifiers.Control : 0);
+                    mask = mask | (keyCodeToRegister.shift ? (uint)KeyModifiers.Shift : 0);
+
+                    var hotkeyRegistered = RegisterHotKey(IntPtr.Zero, GenerateHotKeyId(keyCodeToRegister.virtualKeyCode, keyCodeToRegister.alt, keyCodeToRegister.control, keyCodeToRegister.shift), mask, keyCodeToRegister.virtualKeyCode);
 
                     // send result
                     keyCodeToRegister.taskCompletionSource.SetResult(hotkeyRegistered);
@@ -126,7 +130,7 @@ namespace ScreenTemperature
                             var databaseContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
                             var profileService = scope.ServiceProvider.GetRequiredService<IProfileService>();
 
-                            var keyCode = msg.wParam.ToUInt32();
+                            var keyCode = ExtractKeyCodeFromHotKeyId(msg.wParam);
                             var altWasPressed = ((KeyModifiers)msg.lParam & KeyModifiers.Alt) == KeyModifiers.Alt;
                             var controlWasPressed = ((KeyModifiers)msg.lParam & KeyModifiers.Control) == KeyModifiers.Control;
                             var shiftWasPressed = ((KeyModifiers)msg.lParam & KeyModifiers.Shift) == KeyModifiers.Shift;
@@ -153,11 +157,27 @@ namespace ScreenTemperature
             }
         }
 
-        public async static Task<bool> UnregisterHotKeyAsync(int virtualKeyCode)
+        // generate a unique Id for a key
+        private int GenerateHotKeyId(uint keycode, bool alt, bool control, bool shift)
+        {
+            var mask = (int)keycode << 3;
+            if (alt) mask = mask | (int)KeyModifiers.Alt;
+            if (control) mask = mask | (int)KeyModifiers.Control;
+            if (shift) mask = mask | (int)KeyModifiers.Shift;
+
+            return mask;
+        }
+
+        private int ExtractKeyCodeFromHotKeyId(nuint id)
+        {
+            return (int)id.ToUInt32() >> 3;
+        }
+
+        public async static Task<bool> UnregisterHotKeyAsync(int virtualKeyCode, bool alt, bool control, bool shift)
         {
             var taskCompletionSource = new TaskCompletionSource<bool>();
 
-            Instance._hotkeysToUnregister.Add(((uint)virtualKeyCode, taskCompletionSource));
+            Instance._hotkeysToUnregister.Add(((uint)virtualKeyCode, alt, control, shift, taskCompletionSource));
 
             return await taskCompletionSource.Task;
         }
@@ -166,12 +186,7 @@ namespace ScreenTemperature
         {
             var taskCompletionSource = new TaskCompletionSource<bool>();
 
-            var mask = alt ? (uint)KeyModifiers.Alt : 0;
-            mask = mask | (control ? (uint)KeyModifiers.Control : 0);
-            mask = mask | (shift ? (uint)KeyModifiers.Shift : 0);
-            mask = mask | 0x4000;
-
-            Instance._hotkeysToRegister.Add(((uint)virtualKeyCode, mask, taskCompletionSource));
+            Instance._hotkeysToRegister.Add(((uint)virtualKeyCode, alt, control, shift, taskCompletionSource));
 
             return await taskCompletionSource.Task;
         }

@@ -66,7 +66,7 @@ public class KeyBindingService : IKeyBindingService
             // if binding is updated
             if(entity.KeyCode != dto.KeyCode || entity.Alt != dto.Alt || entity.Control != dto.Control || entity.Shift != dto.Shift)
             {
-                await HotKeyManager.UnregisterHotKeyAsync(entity.KeyCode);
+                await HotKeyManager.UnregisterHotKeyAsync(entity.KeyCode, entity.Alt, entity.Control, entity.Shift);
                 shouldRegisterBinding = true;
             }
         }
@@ -177,7 +177,7 @@ public class KeyBindingService : IKeyBindingService
 
         await _databaseContext.SaveChangesAsync(ct);
 
-        await HotKeyManager.UnregisterHotKeyAsync(entity.KeyCode);
+        await HotKeyManager.UnregisterHotKeyAsync(entity.KeyCode, entity.Alt, entity.Control, entity.Shift);
 
         return new ServiceResult()
         {
