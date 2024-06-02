@@ -154,6 +154,8 @@ namespace ScreenTemperature
                         }
                     }
                 }
+
+                await Task.Delay(200);
             }
         }
 

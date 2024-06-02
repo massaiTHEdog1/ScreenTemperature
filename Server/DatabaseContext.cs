@@ -61,10 +61,14 @@ public class DatabaseContext : DbContext
     // special "local" folder for your platform.
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
-        options.UseSqlite($"Data Source={DbPath}")
-            .LogTo(s => Console.WriteLine(s), LogLevel.Information)
+        options.UseSqlite($"Data Source={DbPath}");
+
+        if (_webHostEnvironment.IsDevelopment())
+        {
+            options.LogTo(Console.WriteLine, LogLevel.Information)
             .EnableDetailedErrors(true)
             .EnableSensitiveDataLogging(true);
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
