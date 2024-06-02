@@ -12,6 +12,10 @@ public class Profile
 
     public string Label { get; set; }
 
-    public ICollection<Configuration> Configurations { get; set; }
-    public ICollection<ApplyProfileAction> ApplyProfileActions { get; set; }
+    public List<Configuration> Configurations { get; set; }
+    
+    /// <summary>
+    /// Key bindings
+    /// </summary>
+    public List<ApplyProfileAction> ApplyProfileActions { get; set; }
 }

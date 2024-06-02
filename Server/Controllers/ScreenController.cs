@@ -1,24 +1,21 @@
-using FastEndpoints;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using ScreenTemperature.DTOs;
 using ScreenTemperature.Services;
 
-public class ListScreensEndpoint : EndpointWithoutRequest<Results<Ok<IList<ScreenDto>>, BadRequest<APIErrorResponseDto>>>
+[AllowAnonymous]
+public class ScreenController : Controller
 {
     private readonly IScreenService _screenService;
 
-    public ListScreensEndpoint(IScreenService screenService)
+    public ScreenController(IScreenService screenService)
     {
         _screenService = screenService;
     }
 
-    public override void Configure()
-    {
-        Get("/api/screens");
-        AllowAnonymous();
-    }
-
-    public override async Task<Results<Ok<IList<ScreenDto>>, BadRequest<APIErrorResponseDto>>> ExecuteAsync(CancellationToken ct)
+    [HttpGet("/api/screens")]
+    public async Task<Results<Ok<IList<ScreenDto>>, BadRequest<APIErrorResponseDto>>> GetAllScreensAsync()
     {
         var getScreensResult = _screenService.GetScreens();
 

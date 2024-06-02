@@ -1,4 +1,5 @@
 using ScreenTemperature.DTOs.Configurations;
+using System.Text.Json.Serialization;
 
 namespace ScreenTemperature.DTOs
 {
@@ -6,6 +7,6 @@ namespace ScreenTemperature.DTOs
     {
         public Guid Id { get; set; }
         public string Label { get; set; }
-        public IEnumerable<ConfigurationDto> Configurations { get; set; }
+        public IEnumerable<Guid> Configurations { get; set; }
     }
 }

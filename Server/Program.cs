@@ -1,8 +1,8 @@
-using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
+using ScreenTemperature.DTOs.Configurations;
 using ScreenTemperature.Middlewares;
 using ScreenTemperature.Services;
-using FastEndpoints.Swagger;
+using Vernou.Swashbuckle.HttpResultsAdapter;
 
 namespace ScreenTemperature;
 
@@ -21,13 +21,19 @@ internal class Program
         builder.Services.AddScoped<IProfileService, ProfileService>();
         builder.Services.AddScoped<IOptionsService, OptionsService>();
         builder.Services.AddScoped<IKeyBindingService, KeyBindingService>();
+        builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 
         builder.Services.AddDbContext<DatabaseContext>();
 
-        builder.Services.AddFastEndpoints().SwaggerDocument(o => {
-            o.ShortSchemaNames = true;
-            o.AutoTagPathSegmentIndex = 2;
-        });
+        if (builder.Environment.IsDevelopment())
+        {
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.OperationFilter<HttpResultsOperationFilter>();
+                c.EnableAnnotations(enableAnnotationsForInheritance: true, enableAnnotationsForPolymorphism: true);
+                c.UseOneOfForPolymorphism();
+            });
+        }
 
         #endregion
 
@@ -45,8 +51,6 @@ internal class Program
 
         var app = builder.Build();
 
-        HotKeyManager.Init(app);
-
         using (var scope = app.Services.CreateScope())
         {
             try
@@ -60,6 +64,8 @@ internal class Program
                 logger.LogError(ex, "An error occurred creating the DB.");
             }
         }
+
+        HotKeyManager.Init(app);
 
         app.UseMiddleware<ExceptionMiddleware>();
 
@@ -75,12 +81,15 @@ internal class Program
 
         app.UseAuthorization();
 
-        app.UseFastEndpoints().UseSwaggerGen();
-
         if (builder.Environment.IsDevelopment())
         {
             app.UseCors("devCORS");
+
+            app.UseSwagger();
+            app.UseSwaggerUI();
         }
+
+        app.MapControllers();
 
         app.Run();
     }

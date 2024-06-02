@@ -69,8 +69,8 @@ public class DatabaseContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<KeyBindingAction>().UseTptMappingStrategy();
-        modelBuilder.Entity<Configuration>().UseTptMappingStrategy();
+        modelBuilder.Entity<KeyBindingAction>().UseTptMappingStrategy(); // for polymorphism
+        modelBuilder.Entity<Configuration>().UseTptMappingStrategy(); // for polymorphism
         modelBuilder.Entity<ApplyProfileAction>().HasOne(p => p.Profile).WithMany(x => x.ApplyProfileActions).OnDelete(DeleteBehavior.NoAction);
     }
 }

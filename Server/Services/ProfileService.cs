@@ -9,10 +9,10 @@ namespace ScreenTemperature.Services;
 
 public interface IProfileService
 {
-    Task<ServiceResult<IList<ProfileDto>>> ListProfilesAsync(CancellationToken ct);
-    Task<ServiceResult<IList<ConfigurationApplyResultDto>>> ApplyProfileAsync(Guid id, Guid[]? configurationIds, CancellationToken ct);
-    Task<ServiceResult<ProfileDto>> CreateOrUpdateProfileAsync(ProfileDto dto, CancellationToken ct);
-    Task<ServiceResult> DeleteProfileAsync(Guid id, CancellationToken ct);
+    Task<ServiceResult<IList<ProfileDto>>> GetAllAsync();
+    Task<ServiceResult<ProfileDto>> CreateOrUpdateAsync(ProfileDto dto);
+    Task<ServiceResult> DeleteAsync(Guid id);
+    Task<ServiceResult<IList<ConfigurationApplyResultDto>>> ApplyAsync(Guid id);
 }
 
 public class ProfileService : IProfileService
@@ -28,7 +28,7 @@ public class ProfileService : IProfileService
         _screenService = screenService;
     }
 
-    public async Task<ServiceResult<IList<ProfileDto>>> ListProfilesAsync(CancellationToken ct)
+    public async Task<ServiceResult<IList<ProfileDto>>> GetAllAsync()
     {
         var profiles = await _databaseContext.Profiles.Include(profile => profile.Configurations).ToListAsync();
 
@@ -39,7 +39,7 @@ public class ProfileService : IProfileService
         };
     }
 
-    public async Task<ServiceResult<ProfileDto>> CreateOrUpdateProfileAsync(ProfileDto dto, CancellationToken ct)
+    public async Task<ServiceResult<ProfileDto>> CreateOrUpdateAsync(ProfileDto dto)
     {
         if (dto == null) return new ServiceResult<ProfileDto>()
         {
@@ -49,8 +49,7 @@ public class ProfileService : IProfileService
 
         // todo : Add dto validation
 
-        // Get entity in database or create a new one
-        var entity = await _databaseContext.Profiles.Include(x => x.Configurations).FirstOrDefaultAsync(x => x.Id == dto.Id, ct);
+        var entity = await _databaseContext.Profiles.Include(x => x.Configurations).Include(x => x.ApplyProfileActions).FirstOrDefaultAsync(x => x.Id == dto.Id);
 
         if (entity == null)
         {
@@ -60,95 +59,26 @@ public class ProfileService : IProfileService
 
         entity.Label = dto.Label;
 
-        #region Configurations
+        if (entity.Configurations == null)
+            entity.Configurations = [];
+        else // remove configurations which are not in dto
+            entity.Configurations.RemoveAll(conf => !dto.Configurations?.Any(id => conf.Id == id) ?? true);
 
-        if (entity.Configurations == null) entity.Configurations = [];
-
-        var idsConfigurationsInDto = dto.Configurations?.Select(x => x.Id) ?? [];
-        var idsConfigurationsInEntity = entity.Configurations!.Select(x => x.Id) ?? [];
-
-        var configurationsToCreate = dto.Configurations?.Where(x => !idsConfigurationsInEntity.Contains(x.Id)) ?? [];
-        var configurationsToDelete = entity.Configurations!.Where(x => !idsConfigurationsInDto.Contains(x.Id)) ?? [];
-
-        // Delete all configurations not present in dto
-        foreach (var configuration in configurationsToDelete)
+        foreach (var configurationId in dto.Configurations ?? [])
         {
-            entity.Configurations.Remove(configuration);
+            var configuration = await _databaseContext.Configurations.FirstOrDefaultAsync(x => x.Id == configurationId);
+
+            if (configuration == null) return new ServiceResult<ProfileDto>()
+            {
+                Success = false,
+                Errors = [$"Configuration with id {configurationId} does not exist."]
+            };
+
+            if(!entity.Configurations.Any(x => x.Id == configurationId))
+                entity.Configurations.Add(configuration);
         }
 
-        // Create each configuration not present in entity
-        foreach (var configuration in configurationsToCreate)
-        {
-            if(configuration is TemperatureConfigurationDto)
-            {
-                entity.Configurations!.Add(new TemperatureConfiguration()
-                {
-                    Id = configuration.Id,
-                });
-            }
-            else if(configuration is ColorConfigurationDto)
-            {
-                entity.Configurations!.Add(new ColorConfiguration()
-                {
-                    Id = configuration.Id,
-                });
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        // Update all configurations in entity
-        foreach (var entityConfiguration in entity.Configurations!)
-        {
-            var dtoConfiguration = dto.Configurations!.First(x => x.Id == entityConfiguration.Id);
-
-            entityConfiguration.ApplyBrightness = dtoConfiguration.ApplyBrightness;
-            entityConfiguration.Brightness = dtoConfiguration.Brightness;
-            entityConfiguration.DevicePath = dtoConfiguration.DevicePath;
-
-            if (entityConfiguration is TemperatureConfiguration temperatureConfiguration)
-            {
-                if (dtoConfiguration is TemperatureConfigurationDto temperatureConfigurationDto)
-                {
-                    temperatureConfiguration.ApplyIntensity = temperatureConfigurationDto.ApplyIntensity;
-                    temperatureConfiguration.Intensity = temperatureConfigurationDto.Intensity;
-                }
-                else
-                {
-                    return new ServiceResult<ProfileDto>()
-                    {
-                        Success = false,
-                        Errors = [$"Cannot change type of configuration '{dtoConfiguration.Id}'"]
-                    };
-                }
-            }
-            else if (entityConfiguration is ColorConfiguration colorConfiguration)
-            {
-                if (dtoConfiguration is ColorConfigurationDto colorConfigurationDto)
-                {
-                    colorConfiguration.ApplyColor = colorConfigurationDto.ApplyColor;
-                    colorConfiguration.Color = colorConfigurationDto.Color;
-                }
-                else
-                {
-                    return new ServiceResult<ProfileDto>()
-                    {
-                        Success = false,
-                        Errors = [$"Cannot change type of configuration '{dtoConfiguration.Id}'"]
-                    };
-                }
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        #endregion
-
-        await _databaseContext.SaveChangesAsync(ct);
+        await _databaseContext.SaveChangesAsync();
 
         return new ServiceResult<ProfileDto>()
         {
@@ -157,7 +87,7 @@ public class ProfileService : IProfileService
         };
     }
 
-    public async Task<ServiceResult> DeleteProfileAsync(Guid id, CancellationToken ct)
+    public async Task<ServiceResult> DeleteAsync(Guid id)
     {
         if (id == Guid.Empty) return new ServiceResult() 
         {
@@ -165,7 +95,7 @@ public class ProfileService : IProfileService
             Errors = ["Invalid parameter."]
         };
 
-        var entity = await _databaseContext.Profiles.Include(x => x.ApplyProfileActions).SingleOrDefaultAsync(x => x.Id == id, cancellationToken: ct);
+        var entity = await _databaseContext.Profiles.SingleOrDefaultAsync(x => x.Id == id);
 
         if(entity == null) return new ServiceResult()
         {
@@ -174,15 +104,15 @@ public class ProfileService : IProfileService
         };
 
         // Cannot delete if this profile is used in key bindings
-        if(entity.ApplyProfileActions?.Count() > 0) return new ServiceResult()
+        if (entity.ApplyProfileActions?.Count() > 0) return new ServiceResult()
         {
             Success = false,
-            Errors = ["This profile is used in key bindings."]
+            Errors = ["This profile is used in at least one key binding."]
         };
 
         _databaseContext.Remove(entity);
 
-        await _databaseContext.SaveChangesAsync(ct);
+        await _databaseContext.SaveChangesAsync();
 
         return new ServiceResult()
         {
@@ -190,7 +120,7 @@ public class ProfileService : IProfileService
         };
     }
 
-    public async Task<ServiceResult<IList<ConfigurationApplyResultDto>>> ApplyProfileAsync(Guid id, Guid[]? configurationIds, CancellationToken ct)
+    public async Task<ServiceResult<IList<ConfigurationApplyResultDto>>> ApplyAsync(Guid id)
     {
         if (id == Guid.Empty) return new ServiceResult<IList<ConfigurationApplyResultDto>>()
         {
@@ -199,7 +129,7 @@ public class ProfileService : IProfileService
         };
 
         // Get profile
-        var profile = await _databaseContext.Profiles.Include(profile => profile.Configurations).SingleOrDefaultAsync(profile => profile.Id == id, ct);
+        var profile = await _databaseContext.Profiles.Include(profile => profile.Configurations).SingleOrDefaultAsync(profile => profile.Id == id);
 
         // if profile does not exist
         if (profile == null) return new ServiceResult<IList<ConfigurationApplyResultDto>>()
@@ -209,29 +139,7 @@ public class ProfileService : IProfileService
         };
 
         // List of configurations to apply
-        IList<Configuration> configurationsToApply = new List<Configuration>();
-        
-        // If a list is in parameters
-        if(configurationIds?.Length > 0)
-        {
-            foreach (var configurationId in configurationIds ?? [])
-            {
-                var configuration = profile.Configurations?.FirstOrDefault(x => x.Id == configurationId);
-
-                if (configuration == null) return new ServiceResult<IList<ConfigurationApplyResultDto>>()
-                {
-                    Success = false,
-                    Errors = [$"Configuration '{configurationId}' does not exist on profile '{id}'."]
-                };
-
-                configurationsToApply.Add(configuration);
-            }
-        }
-        // Apply all configurations
-        else
-        {
-            configurationsToApply = profile.Configurations?.ToList() ?? [];
-        }
+        var configurationsToApply = profile.Configurations?.ToList() ?? [];
 
         var results = new List<ConfigurationApplyResultDto>();
 

@@ -1,9 +1,13 @@
-﻿using System.Text.Json.Serialization;
+﻿using Swashbuckle.AspNetCore.Annotations;
+using System.Text.Json.Serialization;
 
 namespace ScreenTemperature.DTOs.Configurations
 {
-    [JsonDerivedType(derivedType: typeof(TemperatureConfigurationDto), "temperature")]
-    [JsonDerivedType(derivedType: typeof(ColorConfigurationDto), "color")]
+    [SwaggerDiscriminator("$type")]
+    [SwaggerSubType(typeof(TemperatureConfigurationDto), DiscriminatorValue = "temperature")]
+    [JsonDerivedType(typeof(TemperatureConfigurationDto), "temperature")]
+    [SwaggerSubType(typeof(ColorConfigurationDto), DiscriminatorValue = "color")]
+    [JsonDerivedType(typeof(ColorConfigurationDto), "color")]
     public abstract class ConfigurationDto
     {
         public Guid Id { get; set; }

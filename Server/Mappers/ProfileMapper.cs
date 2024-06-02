@@ -13,7 +13,7 @@ namespace ScreenTemperature.Mappers
             {
                 Id = entity.Id,
                 Label = entity.Label,
-                Configurations = entity.Configurations?.Select(x => x.ToDto()) ?? new List<ConfigurationDto>(),
+                Configurations = entity.Configurations?.Select(x => x.Id),
             };
         }
     }

@@ -15,7 +15,22 @@ namespace ScreenTemperature.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
+
+            modelBuilder.Entity("ConfigurationProfile", b =>
+                {
+                    b.Property<Guid>("ConfigurationsId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProfilesId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ConfigurationsId", "ProfilesId");
+
+                    b.HasIndex("ProfilesId");
+
+                    b.ToTable("ConfigurationProfile");
+                });
 
             modelBuilder.Entity("ScreenTemperature.Entities.Configurations.Configuration", b =>
                 {
@@ -32,12 +47,7 @@ namespace ScreenTemperature.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("ProfileId")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("ProfileId");
 
                     b.ToTable("Configurations");
 
@@ -136,15 +146,19 @@ namespace ScreenTemperature.Migrations
                     b.ToTable("ApplyProfileActions");
                 });
 
-            modelBuilder.Entity("ScreenTemperature.Entities.Configurations.Configuration", b =>
+            modelBuilder.Entity("ConfigurationProfile", b =>
                 {
-                    b.HasOne("ScreenTemperature.Entities.Profile", "Profile")
-                        .WithMany("Configurations")
-                        .HasForeignKey("ProfileId")
+                    b.HasOne("ScreenTemperature.Entities.Configurations.Configuration", null)
+                        .WithMany()
+                        .HasForeignKey("ConfigurationsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Profile");
+                    b.HasOne("ScreenTemperature.Entities.Profile", null)
+                        .WithMany()
+                        .HasForeignKey("ProfilesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ScreenTemperature.Entities.KeyBindingActions.KeyBindingAction", b =>
@@ -201,8 +215,6 @@ namespace ScreenTemperature.Migrations
             modelBuilder.Entity("ScreenTemperature.Entities.Profile", b =>
                 {
                     b.Navigation("ApplyProfileActions");
-
-                    b.Navigation("Configurations");
                 });
 #pragma warning restore 612, 618
         }

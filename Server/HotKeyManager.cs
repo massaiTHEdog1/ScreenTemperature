@@ -143,7 +143,7 @@ namespace ScreenTemperature
                                 {
                                     if(action is ApplyProfileAction applyProfileAction)
                                     {
-                                        await profileService.ApplyProfileAsync(applyProfileAction.ProfileId, null, new CancellationToken());
+                                        await profileService.ApplyAsync(applyProfileAction.ProfileId);
                                     }
                                     else
                                     {
