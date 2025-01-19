@@ -2,6 +2,7 @@
 using ScreenTemperature.DTOs;
 using ScreenTemperature.Entities;
 using ScreenTemperature.Mappers;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
@@ -42,6 +43,9 @@ public class ScreenService : IScreenService
 
     [DllImport("Dxva2.dll")]
     private static extern bool SetMonitorBrightness(IntPtr hMonitor, uint dwNewBrightness);
+
+    [DllImport("Dxva2.dll")]
+    private static extern bool GetMonitorCapabilities(IntPtr hdc, out MC_CAPS pdwMonitorCapabilities, out MC_SUPPORTED_COLOR_TEMPERATURE pdwSupportedColorTemperatures);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Rect
@@ -97,6 +101,88 @@ public class ScreenService : IScreenService
     [DllImport("Dxva2.dll")]
     private static extern bool DestroyPhysicalMonitors(uint dwPhysicalMonitorArraySize, [In] PHYSICAL_MONITOR[] pPhysicalMonitorArray);
 
+    // found on https://github.com/emoacht/Monitorian/blob/master/Source/Monitorian.Core/Models/Monitor/MonitorConfiguration.cs
+    [Flags]
+    private enum MC_CAPS
+    {
+        MC_CAPS_NONE = 0x00000000,
+        MC_CAPS_MONITOR_TECHNOLOGY_TYPE = 0x00000001,
+        MC_CAPS_BRIGHTNESS = 0x00000002,
+        MC_CAPS_CONTRAST = 0x00000004,
+        MC_CAPS_COLOR_TEMPERATURE = 0x00000008,
+        MC_CAPS_RED_GREEN_BLUE_GAIN = 0x00000010,
+        MC_CAPS_RED_GREEN_BLUE_DRIVE = 0x00000020,
+        MC_CAPS_DEGAUSS = 0x00000040,
+        MC_CAPS_DISPLAY_AREA_POSITION = 0x00000080,
+        MC_CAPS_DISPLAY_AREA_SIZE = 0x00000100,
+        MC_CAPS_RESTORE_FACTORY_DEFAULTS = 0x00000400,
+        MC_CAPS_RESTORE_FACTORY_COLOR_DEFAULTS = 0x00000800,
+        MC_RESTORE_FACTORY_DEFAULTS_ENABLES_MONITOR_SETTINGS = 0x00001000
+    }
+
+    // found on https://github.com/emoacht/Monitorian/blob/master/Source/Monitorian.Core/Models/Monitor/MonitorConfiguration.cs
+    [Flags]
+    private enum MC_SUPPORTED_COLOR_TEMPERATURE
+    {
+        MC_SUPPORTED_COLOR_TEMPERATURE_NONE = 0x00000000,
+        MC_SUPPORTED_COLOR_TEMPERATURE_4000K = 0x00000001,
+        MC_SUPPORTED_COLOR_TEMPERATURE_5000K = 0x00000002,
+        MC_SUPPORTED_COLOR_TEMPERATURE_6500K = 0x00000004,
+        MC_SUPPORTED_COLOR_TEMPERATURE_7500K = 0x00000008,
+        MC_SUPPORTED_COLOR_TEMPERATURE_8200K = 0x00000010,
+        MC_SUPPORTED_COLOR_TEMPERATURE_9300K = 0x00000020,
+        MC_SUPPORTED_COLOR_TEMPERATURE_10000K = 0x00000040,
+        MC_SUPPORTED_COLOR_TEMPERATURE_11500K = 0x00000080
+    }
+
+    private bool GetScreenPhysicalMonitor(string devicePath, out PHYSICAL_MONITOR[] physicalMonitors)
+    {
+        physicalMonitors = [];
+
+        var display = WindowsDisplayAPI.Display.GetDisplays()?.FirstOrDefault(x => x.DevicePath == devicePath);
+
+        if (display == null) return false;
+
+        var monitorsHandle = new List<IntPtr>();
+
+        if (!EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero,
+        delegate (IntPtr hMonitor, IntPtr hdcMonitor, ref Rect lprcMonitor, IntPtr dwData)
+        {
+            monitorsHandle.Add(hMonitor);
+            return true;
+        }, IntPtr.Zero)) return false;
+
+        var displayMonitorHandle = IntPtr.Zero;
+
+        foreach (var monitorHandle in monitorsHandle)
+        {
+            var monitorInfo = new MonitorInfo
+            {
+                Size = (uint)Marshal.SizeOf(typeof(MonitorInfo))
+            };
+
+            if (!GetMonitorInfo(monitorHandle, ref monitorInfo)) continue;
+
+            if (monitorInfo.DisplayName == display.DisplayName)// if this monitor is the one of the display we are looking for
+            {
+                displayMonitorHandle = monitorHandle;
+                break;
+            }
+        }
+
+        if (displayMonitorHandle == IntPtr.Zero) return false;
+
+        if (!GetNumberOfPhysicalMonitorsFromHMONITOR(displayMonitorHandle, out uint numberOfPhysicalMonitors)) return false;
+
+        if (numberOfPhysicalMonitors == 0 || numberOfPhysicalMonitors > 1) return false;
+
+        physicalMonitors = new PHYSICAL_MONITOR[numberOfPhysicalMonitors];
+
+        if (!GetPhysicalMonitorsFromHMONITOR(displayMonitorHandle, numberOfPhysicalMonitors, physicalMonitors)) return false;
+
+        return true;
+    }
+
     /// <summary>
     /// Returns a list of all attached screens on this machine
     /// </summary>
@@ -104,19 +190,40 @@ public class ScreenService : IScreenService
     {
         var screens = new List<Screen>();
 
-        foreach(var display in WindowsDisplayAPI.Display.GetDisplays())
+        foreach (var display in WindowsDisplayAPI.Display.GetDisplays())// for each windows display
         {
-            var displayTarget = display.ToPathDisplayTarget();
+            if(!GetScreenPhysicalMonitor(display.DevicePath, out PHYSICAL_MONITOR[] physicalMonitors)) continue;
+
+            uint min = 0, max = 0, current = 0;
+            bool isDDCsupported = false;
+            bool isBrightnessSupported = false;
+
+            isDDCsupported = GetMonitorCapabilities(physicalMonitors[0].hPhysicalMonitor, out MC_CAPS pdwMonitorCapabilities, out MC_SUPPORTED_COLOR_TEMPERATURE pdwSupportedColorTemperatures);
+
+            if (isDDCsupported)
+            {
+                isBrightnessSupported = pdwMonitorCapabilities.HasFlag(MC_CAPS.MC_CAPS_BRIGHTNESS);
+            }
+
+            if (isBrightnessSupported)
+                GetMonitorBrightness(physicalMonitors[0].hPhysicalMonitor, ref min, ref current, ref max);
+
+            DestroyPhysicalMonitors(1, physicalMonitors);
 
             screens.Add(new Screen()
             {
-                Label = displayTarget.FriendlyName,
+                Label = display.ToPathDisplayTarget().FriendlyName,
                 Width = display.CurrentSetting.Resolution.Width,
                 Height = display.CurrentSetting.Resolution.Height,
                 IsPrimary = display.IsGDIPrimary,
                 X = display.CurrentSetting.Position.X,
                 Y = display.CurrentSetting.Position.Y,
                 DevicePath = display.DevicePath,
+                IsDDCSupported = isDDCsupported,
+                IsBrightnessSupported = isBrightnessSupported,
+                MinBrightness = (int)min,
+                MaxBrightness = (int)max,
+                CurrentBrightness = (int)current,
             });
         }
 
@@ -159,8 +266,8 @@ public class ScreenService : IScreenService
 
         return new ServiceResult<bool>()
         {
-            Success = true,
-            Data = succeeded
+            Success = succeeded,
+            Errors = !succeeded ? ["Value is not supported."] : null
         };
     }
 
@@ -268,112 +375,37 @@ public class ScreenService : IScreenService
 
     public ServiceResult<bool> ApplyBrightnessToScreen(int brightness, string devicePath)
     {
-        var display = WindowsDisplayAPI.Display.GetDisplays().FirstOrDefault(x => x.DevicePath == devicePath);
-
-        if (display == null) return new ServiceResult<bool>()
+        if (!GetScreenPhysicalMonitor(devicePath, out PHYSICAL_MONITOR[] physicalMonitors)) return new ServiceResult<bool>()
         {
             Success = false,
             Errors = [$"Could not find screen '{devicePath}'."]
         };
 
-        var succeededToEnumMonitors = false;
-        var monitorsHandle = new List<IntPtr>();
+        var succeeded = false;
 
-        succeededToEnumMonitors = EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero,
-        delegate (IntPtr hMonitor, IntPtr hdcMonitor, ref Rect lprcMonitor, IntPtr dwData)
+        if(GetMonitorCapabilities(physicalMonitors[0].hPhysicalMonitor, out MC_CAPS pdwMonitorCapabilities, out MC_SUPPORTED_COLOR_TEMPERATURE pdwSupportedColorTemperatures))
         {
-            monitorsHandle.Add(hMonitor);
-            return true;
-        }, IntPtr.Zero);
-
-        if (!succeededToEnumMonitors) return new ServiceResult<bool>()
-        {
-            Success = false,
-            Errors = ["Failed to enumerate monitors."]
-        };
-
-        foreach(var monitorHandle in monitorsHandle)
-        {
-            var monitorInfo = new MonitorInfo
+            if(pdwMonitorCapabilities.HasFlag(MC_CAPS.MC_CAPS_BRIGHTNESS))
             {
-                Size = (uint)Marshal.SizeOf(typeof(MonitorInfo))
-            };
+                uint min = 0, max = 0, current = 0;
 
-            var succeededToGetMonitorInfo = GetMonitorInfo(monitorHandle, ref monitorInfo);
+                GetMonitorBrightness(physicalMonitors[0].hPhysicalMonitor, ref min, ref current, ref max);
 
-            if (!succeededToGetMonitorInfo) continue;
-            
-            if(monitorInfo.DisplayName == display.DisplayName)
-            {
-                uint numberOfPhysicalMonitors;
-                var succeededToGetNumberOfPhysicalMonitors = GetNumberOfPhysicalMonitorsFromHMONITOR(monitorHandle, out numberOfPhysicalMonitors);
+                // calculate maximum when minimum is 0
+                var maximum = max - min;
 
-                if (!succeededToGetNumberOfPhysicalMonitors || numberOfPhysicalMonitors == 0) continue;
+                // brightness is in percentage
+                var valueToApply = (uint)brightness * maximum / 100 + min;
 
-                var physicalMonitors = new PHYSICAL_MONITOR[numberOfPhysicalMonitors];
-                var succeedToGetPhysicalMonitors = GetPhysicalMonitorsFromHMONITOR(monitorHandle, numberOfPhysicalMonitors, physicalMonitors);
-
-                if (!succeedToGetPhysicalMonitors) continue;
-
-                foreach(var physicalMonitor in physicalMonitors)
-                {
-                    uint min = 0, max = 0, current = 0;
-
-                    // todo : need some cache
-                    if (!GetMonitorBrightness(physicalMonitor.hPhysicalMonitor, ref min, ref current, ref max)) continue;
-
-                    // calculate maximum when minimum is 0
-                    var maximum = max-min;
-
-                    var valueToApply = (uint)brightness * maximum / 100 + min;
-
-                    SetMonitorBrightness(physicalMonitor.hPhysicalMonitor, valueToApply);
-                }
-
-                DestroyPhysicalMonitors(numberOfPhysicalMonitors, physicalMonitors);
-
-                break;
+                succeeded = SetMonitorBrightness(physicalMonitors[0].hPhysicalMonitor, valueToApply);
             }
         }
 
+        DestroyPhysicalMonitors(1, physicalMonitors);
+
         return new ServiceResult<bool>()
         {
-            Success = true,
+            Success = succeeded,
         };
-    }
-
-    public void Test()
-    {
-        var display = WindowsDisplayAPI.Display.GetDisplays().First();
-
-        var monitorsHandle = new List<IntPtr>();
-
-        EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero,
-        delegate (IntPtr hMonitor, IntPtr hdcMonitor, ref Rect lprcMonitor, IntPtr dwData)
-        {
-            monitorsHandle.Add(hMonitor);
-            return true;
-        }, IntPtr.Zero);
-
-        uint min = 0, max = 0, current = 0;
-
-        MonitorInfo monitorInfo = new MonitorInfo
-        {
-            Size = (uint)Marshal.SizeOf(typeof(MonitorInfo))
-        };
-
-        GetMonitorInfo(monitorsHandle[1], ref monitorInfo);
-        
-
-        uint numberOfPhysicalMonitors;
-        GetNumberOfPhysicalMonitorsFromHMONITOR(monitorsHandle[1], out numberOfPhysicalMonitors);
-
-        var monitors = new PHYSICAL_MONITOR[numberOfPhysicalMonitors];
-        GetPhysicalMonitorsFromHMONITOR(monitorsHandle[1], numberOfPhysicalMonitors, monitors);
-        GetMonitorBrightness(monitors[0].hPhysicalMonitor, ref min, ref current, ref max);
-
-        var a = DestroyPhysicalMonitors(numberOfPhysicalMonitors, monitors);
-
-        Debugger.Break();
     }
 }

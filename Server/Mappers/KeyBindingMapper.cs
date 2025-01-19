@@ -1,5 +1,5 @@
 ﻿using ScreenTemperature.DTOs;
-using ScreenTemperature.DTOs.KeyBindingActions;
+using ScreenTemperature.DTOs.Commands;
 using ScreenTemperature.Entities;
 
 namespace ScreenTemperature.Mappers
@@ -11,7 +11,7 @@ namespace ScreenTemperature.Mappers
             return new KeyBindingDto()
             {
                 Id = entity.Id,
-                Actions = entity.Actions?.Select(x => x.ToDto()) ?? new List<KeyBindingActionDto>(){},
+                Commands = entity.Commands?.Select(x => x.ToDto()) ?? new List<CommandDto>(){},
                 Alt = entity.Alt,
                 Control = entity.Control,
                 KeyCode = entity.KeyCode,

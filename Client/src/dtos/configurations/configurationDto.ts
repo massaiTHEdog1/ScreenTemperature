@@ -1,15 +1,13 @@
 export enum ConfigurationDiscriminator {
-  TemperatureConfiguration = 0,
-  ColorConfiguration = 1,
+  TemperatureConfiguration = "temperature",
+  ColorConfiguration = "color",
 }
 
-export abstract class ConfigurationDto {
-  public abstract $type: ConfigurationDiscriminator;
-  public Id: string = "";
-  public DevicePath: string = "";
-  public Brightness: number = 100;
-
-  public constructor(dto?: Partial<ConfigurationDto>) {
-    Object.assign(this, dto);
-  }
+export interface ConfigurationDto {
+  $type: ConfigurationDiscriminator;
+  id: string;
+  name: string;
+  devicePath: string;
+  applyBrightness: boolean;
+  brightness: number;
 }

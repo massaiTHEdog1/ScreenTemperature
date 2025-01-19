@@ -1,182 +1,197 @@
-<script lang="ts">
-import { defineComponent, PropType, ref } from 'vue'
-import { Screen } from "../models/screen";
+<script setup lang="ts">
+import { ref, watch, PropType } from 'vue';
 
-export default defineComponent({
-  expose: ["Refresh"],
-  props: {
-    /** A list of screen to display. */
-    screens: { type: Array as PropType<Screen[]>, required: true },
-    /** Enable multi-selection. */
-    allowMultipleSelection: { type: Boolean, required: false, default: true },
-    /** If true, a click acts as a toggle. */
-    clickToggle: { type: Boolean, required: false, default: false },
-    /** Allow an empty selection. */
-    allowEmptySelection: { type: Boolean, required: false, default: false }
-  },
-  emits: {
-    selectionChanged(payload: Screen[]){
-      return true;
-    }
-  },
-  data() {
-    return {
-      aspectRatio: ref<string>(),
-    }
-  },
-  mounted() {
-    this.refresh();
+export interface Screen {
+  index: number;
+  id: string;
+  label: string;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  isSelected: boolean;
+  isDDCSupported?: boolean;
+  isBrightnessSupported?: boolean;
+  brightnessMinimum?: number;
+  brightnessMaximum?: number;
+  currentBrightness?: number;
+}
 
-    this.selectFirstScreenIfRequired();
-  },
-  watch: {
-    screens(newvalue, oldValue) {
-      this.refresh();
+interface LocalScreen extends Screen{
+  /** Returns the width in percentages. */
+  widthPercentage: number;
+  /** Returns the height in percentages. */
+  heightPercentage: number;
+  /** Returns the X position in percentages. */
+  XPercentage: number;
+  /** Returns the Y position in percentages. */
+  YPercentage: number;
+}
 
-      this.selectFirstScreenIfRequired();
-    }
-  },
-  methods: {
-    selectFirstScreenIfRequired() {
-      if (!this.allowEmptySelection && this.screens.length > 0)
-      {
-        this.select(this.screens[0]);
-        this.$emit("selectionChanged", [this.screens[0]]);
-      }
-    },
-    /** Refreshes the component. */
-    refresh() {
-
-      this.aspectRatio = undefined;
-
-      if (this.screens.length == 0)
-        return;
-
-      let rectangleLeftBorderPosition = 0;
-      let rectangleRightBorderPosition = 0;
-      let rectangleTopBorderPosition = 0;
-      let rectangleBottomBorderPosition = 0;
-
-      /** The X position of the righmost screen */
-      let maximumX = 0;
-      /** The Y position of the lowest screen */
-      let maximumY = 0;
-
-      // We calculate the dimensions of the rectangle
-      for (const screen of this.screens) {
-        if (screen.X < rectangleLeftBorderPosition)
-          rectangleLeftBorderPosition = screen.X;
-
-        if (screen.X + screen.Width > rectangleRightBorderPosition)
-          rectangleRightBorderPosition = screen.X + screen.Width;
-
-        if (screen.Y < rectangleTopBorderPosition)
-          rectangleTopBorderPosition = screen.Y;
-
-        if (screen.Y + screen.Height > rectangleBottomBorderPosition)
-          rectangleBottomBorderPosition = screen.Y + screen.Height;
-
-        if (screen.X > maximumX)
-          maximumX = screen.X;
-
-        if (screen.Y > maximumY)
-          maximumY = screen.Y;
-      }
-
-      // We calculate the width/height of the rectangle
-      const rectangleWidth = rectangleRightBorderPosition - rectangleLeftBorderPosition;
-      const rectangleHeight = rectangleBottomBorderPosition - rectangleTopBorderPosition;
-
-      // For each screen, we calculate it's dimensions in percentage relative to the rectangle
-      for (const screen of this.screens) {
-        screen.WidthPercentage = screen.Width * 100 / rectangleWidth;
-        screen.HeightPercentage = screen.Height * 100 / rectangleHeight;
-        screen.XPercentage = (screen.X - rectangleLeftBorderPosition) * (maximumX / rectangleWidth * 100) / maximumX;
-        screen.YPercentage = (screen.Y - rectangleTopBorderPosition) * (maximumY / rectangleHeight * 100) / maximumY;
-      }
-
-      this.aspectRatio = `${rectangleWidth} / ${rectangleHeight}`;
-    },
-    /** 
-     * Deselect a screen.
-     * 
-     * Cannot deselect a screen if it is the only selected screen.
-     * @param screen The screen we want to deselect.
-     */
-    deselect(screen: Screen) {
-      // A screen cannot be deselected if it is the only selected screen
-      if (!this.allowEmptySelection && this.screens.filter(x => x.IsSelected)?.length == 1 && screen.DevicePath == this.screens.find(x => x.IsSelected)!.DevicePath)
-        return;
-
-      screen.IsSelected = false;
-    },
-    /** Select a screen. */
-    select(screen: Screen) {
-
-      screen.IsSelected = true;
-
-      if (!this.allowMultipleSelection)
-        this.deselectAllScreensExcept(screen);
-
-    },
-    /** Toggle selection of a screen. */
-    toggleSelection(screen: Screen) {
-      if (screen.IsSelected)
-        this.deselect(screen);
-      else
-        this.select(screen);
-    },
-    deselectAllScreensExcept(screenToKeepSelected: Screen) {
-      this.screens.forEach(screen => {
-        if (screen.DevicePath != screenToKeepSelected.DevicePath)
-          this.deselect(screen);
-      });
-    },
-    getSimplifiedArray() {
-      return this.screens.map(x => ({ id: x.DevicePath, isSelected: x.IsSelected }));
-    },
-    onScreenClick(event: MouseEvent, screen: Screen) {
-
-      const before = JSON.stringify(this.getSimplifiedArray());
-
-      if (!this.clickToggle) {
-        if (!event.ctrlKey) {
-          this.select(screen);
-          // Deselect all screens except one.
-          this.deselectAllScreensExcept(screen);
-        }
-        else// If Ctrl key is pressed
-        {
-          this.toggleSelection(screen);
-        }
-      }
-      else {
-        this.toggleSelection(screen);
-      }
-
-      if (before != JSON.stringify(this.getSimplifiedArray()))
-        this.$emit("selectionChanged", this.screens.filter(x => x.IsSelected));
-    }
-  }
+const props = defineProps({
+  /** A list of screen to display. */
+  screens: { type: Array as PropType<Screen[]>, required: true },
+  /** Enable multi-selection. */
+  allowMultipleSelection: { type: Boolean, required: false, default: true },
+  /** If true, a click acts as a toggle. */
+  clickToggle: { type: Boolean, required: false, default: false },
+  /** Allow an empty selection. */
+  allowEmptySelection: { type: Boolean, required: false, default: false },
+  readonly: { type: Boolean, required: false, default: false },
 });
+
+const localScreens = ref<LocalScreen[]>([]);
+
+const emit = defineEmits<{
+  selectionChanged: [selection: Screen[]]
+}>();
+
+const aspectRatio = ref<string>();
+
+const refresh = () => {
+  aspectRatio.value = undefined;
+
+  if (localScreens.value.length === 0) return;
+
+  let rectangleLeftBorderPosition = 0;
+  let rectangleRightBorderPosition = 0;
+  let rectangleTopBorderPosition = 0;
+  let rectangleBottomBorderPosition = 0;
+
+  let maximumX = 0;
+  let maximumY = 0;
+
+  for (const screen of localScreens.value) {
+    if (screen.x < rectangleLeftBorderPosition) rectangleLeftBorderPosition = screen.x;
+    if (screen.x + screen.width > rectangleRightBorderPosition) rectangleRightBorderPosition = screen.x + screen.width;
+    if (screen.y < rectangleTopBorderPosition) rectangleTopBorderPosition = screen.y;
+    if (screen.y + screen.height > rectangleBottomBorderPosition) rectangleBottomBorderPosition = screen.y + screen.height;
+    if (screen.x > maximumX) maximumX = screen.x;
+    if (screen.y > maximumY) maximumY = screen.y;
+  }
+
+  const rectangleWidth = rectangleRightBorderPosition - rectangleLeftBorderPosition;
+  const rectangleHeight = rectangleBottomBorderPosition - rectangleTopBorderPosition;
+
+  for (const screen of localScreens.value) {
+    screen.widthPercentage = screen.width * 100 / rectangleWidth;
+    screen.heightPercentage = screen.height * 100 / rectangleHeight;
+    screen.XPercentage = (screen.x - rectangleLeftBorderPosition) * (maximumX / rectangleWidth * 100) / maximumX;
+    screen.YPercentage = (screen.y - rectangleTopBorderPosition) * (maximumY / rectangleHeight * 100) / maximumY;
+  }
+
+  aspectRatio.value = `${rectangleWidth} / ${rectangleHeight}`;
+};
+
+const selectFirstScreenIfRequired = () => {
+  if (!props.allowEmptySelection && localScreens.value.length > 0) {
+    select(localScreens.value[0]);
+    emit('selectionChanged', [localScreens.value[0]]);
+  }
+};
+
+watch(() => props.screens, (newState) => {
+  localScreens.value = newState.map(x => ({
+    ...x,
+    widthPercentage: 0, 
+    heightPercentage: 0, 
+    XPercentage: 0, 
+    YPercentage: 0, 
+  } satisfies LocalScreen)) ?? [];
+
+  refresh();
+  selectFirstScreenIfRequired();
+  
+}, { immediate: true });
+
+const deselect = (screen: Screen) => {
+  if (!props.allowEmptySelection && localScreens.value.filter(x => x.isSelected)?.length == 1 && screen.id == localScreens.value.find(x => x.isSelected)!.id) return;
+  screen.isSelected = false;
+};
+
+const select = (screen: Screen) => {
+  if(props.readonly) return;
+  screen.isSelected = true;
+  if (!props.allowMultipleSelection) deselectAllScreensExcept(screen);
+};
+
+const toggleSelection = (screen: Screen) => {
+  if (screen.isSelected) deselect(screen);
+  else select(screen);
+};
+
+const deselectAllScreensExcept = (screenToKeepSelected: Screen) => {
+  localScreens.value.forEach(screen => {
+    if (screen.id != screenToKeepSelected.id) deselect(screen);
+  });
+};
+
+
+const onScreenClick = (event: MouseEvent | KeyboardEvent, screen: Screen) => {
+  const before = JSON.stringify(localScreens.value);// save current state
+
+  if (!props.clickToggle) {
+    if (!event.ctrlKey) {
+      select(screen);
+      deselectAllScreensExcept(screen);
+    } else {
+      toggleSelection(screen);
+    }
+  } else {
+    toggleSelection(screen);
+  }
+
+  if (JSON.stringify(localScreens.value) != before)
+  {
+    emit('selectionChanged', localScreens.value.filter(x => x.isSelected));
+    localScreens.value = JSON.parse(before);// rollback changes
+  }
+};
 
 </script>
 
 <template>
-  <div style="position: relative; margin: auto; max-width: 100%; max-height: 100%;" :style="{ aspectRatio }">
-    <div v-if="screens.length > 0" class="screen" v-for="screen in screens" :key="screen.DevicePath"
+  <div
+    class="relative mx-auto max-h-full"
+    :style="{ aspectRatio }"
+  >
+    <div
+      v-for="screen in localScreens"
+      v-if="localScreens.length > 0"
+      
+      :key="screen.id"
+      class="screen"
+      :style="{ width: `${screen.widthPercentage}%`, height: `${screen.heightPercentage}%`, left: `${screen.XPercentage}%`, top: `${screen.YPercentage}%` }"
+      :class="{ 'selected': screen.isSelected }"
+      tabindex="0"
+      @keyup.enter="$event => onScreenClick($event, screen)"
       @click="$event => onScreenClick($event, screen)"
-      :style="{ width: `${screen.WidthPercentage}%`, height: `${screen.HeightPercentage}%`, left: `${screen.XPercentage}%`, top: `${screen.YPercentage}%` }"
-      :class="{ 'selected': screen.IsSelected }">
-      {{ screen.Label }}<br />
-      {{ screen.Width }} x {{ screen.Height }}
+    >
+      <p class="absolute text-sm top-1 left-1">
+        {{ screen.index }}
+      </p>
+      <p>{{ screen.label }}</p>
+      <p>{{ screen.width }} x {{ screen.height }}</p>
+      <p v-tooltip.top="'Current brightness'" v-if="screen.isBrightnessSupported">
+        <i class="pi pi-lightbulb" /> {{ (screen.currentBrightness! - screen.brightnessMinimum!) * 100 / (screen.brightnessMaximum! - screen.brightnessMinimum!) }}%
+      </p>
     </div>
-    <p v-else style="text-align: center;">No screen</p>
+    <slot
+      v-else
+      name="no-screen"
+    >
+      <slot name="no-screen">
+        <p class="text-center">
+          No screen
+        </p>
+      </slot>
+    </slot>
   </div>
 </template>
 
 <style scoped>
 .screen {
+  @apply truncate flex-col relative; 
   background-color: #2E2E2E;
   color: white;
   position: absolute;

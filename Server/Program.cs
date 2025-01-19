@@ -18,7 +18,6 @@ internal class Program
         builder.Services.AddControllers();
 
         builder.Services.AddScoped<IScreenService, ScreenService>();
-        builder.Services.AddScoped<IProfileService, ProfileService>();
         builder.Services.AddScoped<IOptionsService, OptionsService>();
         builder.Services.AddScoped<IKeyBindingService, KeyBindingService>();
         builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
@@ -44,7 +43,8 @@ internal class Program
                 options.AddPolicy(name: "devCORS",
                                   policy =>
                                   {
-                                      policy.WithOrigins("http://localhost:5173");
+                                      policy.WithOrigins("http://localhost:5173").AllowAnyMethod().AllowAnyHeader();
+                                      //policy.WithMethods()
                                   });
             });
         }
@@ -79,17 +79,22 @@ internal class Program
 
         //app.UseStaticFiles();
 
+        if (builder.Environment.IsDevelopment())
+        {
+            app.UseCors("devCORS");
+        }
+
         app.UseAuthorization();
 
         if (builder.Environment.IsDevelopment())
         {
-            app.UseCors("devCORS");
-
             app.UseSwagger();
             app.UseSwaggerUI();
         }
 
         app.MapControllers();
+
+        
 
         app.Run();
     }

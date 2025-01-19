@@ -1,84 +1,89 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import ROUTES from './router/constants';
+import ScreensViewer from '@/components/ScreensViewer.vue';
+import { Routes } from "@/global";
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+import ProgressSpinner from 'primevue/progressspinner';
+import { useScreens } from '@/composables/useScreens';
+import Toast from 'primevue/toast';
 
-const router = useRouter();
 const route = useRoute();
 
-const currentRoutePath = ref(ROUTES.CONFIGURATIONS);
+const { selectedScreens, screens, isFetching: isFetchingScreens, isError: failedFetchingScreens } = useScreens();
 
-watch(() => route.path, path => {
-  currentRoutePath.value = path;
+const currentPageLevel = computed(() => {
+  if(route.name == Routes.CONFIGURATIONS || route.name == Routes.BINDINGS) return 1;
+  if(route.name == Routes.CONFIGURATIONS_CREATE || route.name == Routes.CONFIGURATIONS_UPDATE) return 2;
+  return 0;
+});
+
+const marginLeft = computed(() => {
+  return `-${currentPageLevel.value * 100}%`;
 });
 
 </script>
 
 <template>
-  <div class="h-full flex">
-    <div class="menu">
-      
-      <div class="menu-item" :class="{ 'menu-item-active': currentRoutePath == ROUTES.CONFIGURATIONS }" @click=" router.push(ROUTES.CONFIGURATIONS)">
-        <font-awesome-icon icon="fa-solid fa-display" />
-      </div>
-
-      <div class="menu-item" :class="{ 'menu-item-active': currentRoutePath == ROUTES.BINDINGS }" @click=" router.push(ROUTES.BINDINGS)">
-        <font-awesome-icon icon="fa-solid fa-keyboard" />
-      </div>
-
-      <div class="menu-item mt-auto" :class="{ 'menu-item-active': currentRoutePath == ROUTES.SETTINGS }" @click=" router.push(ROUTES.SETTINGS)">
-        <font-awesome-icon icon="fa-solid fa-gear" />
-      </div>
-
+  <div class="h-full flex flex-col gap-2 bg-[#1B2126] text-white p-3">
+    <div class="w-full h-fit max-h-[min(50%,250px)] p-5 bg-[#171717] mx-auto rounded-lg border-2 border-[#4D4D4D]">
+      <ScreensViewer
+        :screens="screens ?? []"
+        :allow-empty-selection="true"
+        :allow-multiple-selection="false"
+        @selection-changed="(e) => selectedScreens = e"
+      >
+        <template #no-screen>
+          <div class="flex items-center">
+            <ProgressSpinner v-if="isFetchingScreens || failedFetchingScreens" />
+          </div>
+        </template>
+      </ScreensViewer>
     </div>
-    <div class="flex-1" style="background-color: #252526;">
-      <router-view />
+    
+    <div class="overflow-x-hidden h-full w-full">
+      <div
+        class="h-full w-[300%] flex flex-row transition-all"
+        :style="{ marginLeft: marginLeft }"
+      >
+        <div class="h-full w-full">
+          <div class="content w-full h-full mx-auto">
+            <component
+              :is="route.matched.find(x => x.name == Routes.CATEGORY_SELECTION)?.components?.default"
+              v-if="route.matched.some(x => x.name == Routes.CATEGORY_SELECTION)"
+            />
+          </div>
+        </div>
+        <div class="h-full w-full">
+          <div class="content w-full h-full mx-auto">
+            <component
+              :is="route.matched.find(x => x.name == Routes.CONFIGURATIONS)?.components?.default"
+              v-if="route.matched.some(x => x.name == Routes.CONFIGURATIONS)"
+            />
+          </div>
+        </div>
+        <div class="h-full w-full">
+          <div class="content w-full h-full mx-auto">
+            <component
+              :is="route.matched.find(x => x.name == Routes.CONFIGURATIONS_CREATE)?.components?.default"
+              v-if="route.matched.some(x => x.name == Routes.CONFIGURATIONS_CREATE)"
+            />
+            <component
+              :is="route.matched.find(x => x.name == Routes.CONFIGURATIONS_UPDATE)?.components?.default"
+              v-bind="route.matched.find(x => x.name == Routes.CONFIGURATIONS_UPDATE)?.props.default(route)"
+              v-if="route.matched.some(x => x.name == Routes.CONFIGURATIONS_UPDATE)"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-  <!-- <HelloWorld msg="Vite + Vue" /> -->
+  <Toast/>
 </template>
 
 <style scoped>
-* {
-  --menu-width: 50px;
-}
 
-.menu {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: var(--menu-width);
-  background-color: #333333;
-}
-
-.menu .menu-item {
-  width: var(--menu-width);
-  height: var(--menu-width);
-
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  font-size: 1.4rem;
-  color: #858585;
-}
-
-.menu .menu-item:hover {
-  color: white;
-}
-
-.menu .menu-item-active {
-  color: white;
-}
-
-.menu .menu-item-active::before {
-  content: '';
-  /* background-color: white; */
-  position: absolute;
-  width: var(--menu-width);
-  height: var(--menu-width);
-  border-left: 3px solid white;
+.content {
+  max-width: 850px;
 }
 
 </style>

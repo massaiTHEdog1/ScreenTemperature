@@ -11,5 +11,10 @@ namespace ScreenTemperature.DTOs
         public int Y { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
+        public bool IsDDCSupported {  get; set; }
+        public bool IsBrightnessSupported {  get; set; }
+        public int MaxBrightness { get; set; }
+        public int MinBrightness { get; set; }
+        public int CurrentBrightness { get; set; }
     }
 }

@@ -1,5 +1,5 @@
 
-using ScreenTemperature.Entities.KeyBindingActions;
+using ScreenTemperature.Entities.Commands;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ScreenTemperature.Entities;
@@ -16,12 +16,12 @@ public class KeyBinding
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Returns the actions associated to this binding.
+    /// Returns the commands associated to this binding.
     /// </summary>
-    public List<KeyBindingAction> Actions { get; set; }
+    public List<Command> Commands { get; set; }
 
     /// <summary>
-    /// Return the key that executes the <see cref="Actions"/>.
+    /// Return the key that executes the <see cref="Commands"/>.
     /// </summary>
     public int KeyCode { get; set; }
 

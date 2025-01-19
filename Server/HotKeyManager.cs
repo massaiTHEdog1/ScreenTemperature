@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using ScreenTemperature.Entities.KeyBindingActions;
-using ScreenTemperature.Services;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 
@@ -128,27 +126,19 @@ namespace ScreenTemperature
                         using (var scope = _app.Services.CreateScope())
                         {
                             var databaseContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
-                            var profileService = scope.ServiceProvider.GetRequiredService<IProfileService>();
 
                             var keyCode = ExtractKeyCodeFromHotKeyId(msg.wParam);
                             var altWasPressed = ((KeyModifiers)msg.lParam & KeyModifiers.Alt) == KeyModifiers.Alt;
                             var controlWasPressed = ((KeyModifiers)msg.lParam & KeyModifiers.Control) == KeyModifiers.Control;
                             var shiftWasPressed = ((KeyModifiers)msg.lParam & KeyModifiers.Shift) == KeyModifiers.Shift;
 
-                            var matchingBinding = databaseContext.KeyBindings.Include(binding => binding.Actions).SingleOrDefault(x => x.KeyCode == keyCode && x.Alt == altWasPressed && x.Control == controlWasPressed && x.Shift == shiftWasPressed);
+                            var matchingBinding = databaseContext.KeyBindings.Include(binding => binding.Commands).SingleOrDefault(x => x.KeyCode == keyCode && x.Alt == altWasPressed && x.Control == controlWasPressed && x.Shift == shiftWasPressed);
 
                             if(matchingBinding != null) 
                             {
-                                foreach(var action  in matchingBinding.Actions)
+                                foreach(var command  in matchingBinding.Commands)
                                 {
-                                    if(action is ApplyProfileAction applyProfileAction)
-                                    {
-                                        await profileService.ApplyAsync(applyProfileAction.ProfileId);
-                                    }
-                                    else
-                                    {
-                                        throw new NotImplementedException();
-                                    }
+                                    throw new NotImplementedException();
                                 }
                             }
                         }

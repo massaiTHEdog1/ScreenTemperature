@@ -4,8 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using ScreenTemperature.DTOs;
 using ScreenTemperature.Entities;
 using ScreenTemperature.Mappers;
-using ScreenTemperature.Entities.KeyBindingActions;
-using ScreenTemperature.DTOs.KeyBindingActions;
 
 namespace ScreenTemperature.Services;
 
@@ -18,10 +16,10 @@ public interface IKeyBindingService
 
 public class KeyBindingService : IKeyBindingService
 {
-    private readonly ILogger<ProfileService> _logger;
+    private readonly ILogger<KeyBindingService> _logger;
     private readonly DatabaseContext _databaseContext;
 
-    public KeyBindingService(ILogger<ProfileService> logger, DatabaseContext databaseContext)
+    public KeyBindingService(ILogger<KeyBindingService> logger, DatabaseContext databaseContext)
     {
         _logger = logger;
         _databaseContext = databaseContext;
@@ -29,7 +27,7 @@ public class KeyBindingService : IKeyBindingService
 
     public async Task<ServiceResult<IList<KeyBindingDto>>> ListKeyBindingsAsync(CancellationToken ct)
     {
-        var bindings = await _databaseContext.KeyBindings.Include(binding => binding.Actions).ToListAsync();
+        var bindings = await _databaseContext.KeyBindings.Include(binding => binding.Commands).ToListAsync();
 
         return new ServiceResult<IList<KeyBindingDto>>()
         {
@@ -51,7 +49,7 @@ public class KeyBindingService : IKeyBindingService
         var shouldRegisterBinding = false;
 
         // Get entity in database or create a new one
-        var entity = await _databaseContext.KeyBindings.Include(x => x.Actions).FirstOrDefaultAsync(x => x.Id == dto.Id, ct);
+        var entity = await _databaseContext.KeyBindings.Include(x => x.Commands).FirstOrDefaultAsync(x => x.Id == dto.Id, ct);
 
         // if it is an insertion
         if (entity == null)
@@ -78,60 +76,32 @@ public class KeyBindingService : IKeyBindingService
 
         #region Configurations
 
-        if (entity.Actions == null) entity.Actions = [];
+        if (entity.Commands == null) entity.Commands = [];
 
-        var idsActionsInDto = dto.Actions?.Select(x => x.Id) ?? [];
-        var idsActionsInEntity = entity.Actions!.Select(x => x.Id) ?? [];
+        var idsCommandsInDto = dto.Commands?.Select(x => x.Id) ?? [];
+        var idsCommandsInEntity = entity.Commands!.Select(x => x.Id) ?? [];
 
-        var actionsToCreate = dto.Actions?.Where(x => !idsActionsInEntity.Contains(x.Id)) ?? [];
-        var actionsToDelete = entity.Actions!.Where(x => !idsActionsInDto.Contains(x.Id)) ?? [];
+        var commandsToCreate = dto.Commands?.Where(x => !idsCommandsInEntity.Contains(x.Id)) ?? [];
+        var commandsToDelete = entity.Commands!.Where(x => !idsCommandsInDto.Contains(x.Id)) ?? [];
 
-        // Delete all actions not present in dto
-        foreach (var action in actionsToDelete)
+        // Delete all commands not present in dto
+        foreach (var command in commandsToDelete)
         {
-            entity.Actions.Remove(action);
+            entity.Commands.Remove(command);
         }
 
-        // Create each action not present in entity
-        foreach (var action in actionsToCreate)
+        // Create each command not present in entity
+        foreach (var command in commandsToCreate)
         {
-            if (action is ApplyProfileActionDto)
-            {
-                entity.Actions!.Add(new ApplyProfileAction()
-                {
-                    Id = action.Id,
-                });
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+            throw new NotImplementedException();
         }
 
-        // Update all actions in entity
-        foreach (var entityAction in entity.Actions!)
+        // Update all commands in entity
+        foreach (var entityCommand in entity.Commands!)
         {
-            var dtoAction = dto.Actions!.First(x => x.Id == entityAction.Id);
+            var dtoCommand = dto.Commands!.First(x => x.Id == entityCommand.Id);
 
-            if (entityAction is ApplyProfileAction applyProfileAction)
-            {
-                if (dtoAction is ApplyProfileActionDto applyProfileActionDto)
-                {
-                    applyProfileAction.ProfileId = applyProfileActionDto.ProfileId;
-                }
-                else
-                {
-                    return new ServiceResult<KeyBindingWithHotKeyRegistrationResultDto>()
-                    {
-                        Success = false,
-                        Errors = [$"Cannot change type of action '{dtoAction.Id}'"]
-                    };
-                }
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+            throw new NotImplementedException();
         }
 
         #endregion

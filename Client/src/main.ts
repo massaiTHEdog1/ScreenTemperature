@@ -1,42 +1,26 @@
 import { createApp } from "vue";
 import App from "./App.vue";
 import "./style.css";
-
-//#region FontAwesome
-
-import { library } from "@fortawesome/fontawesome-svg-core";
-import {
-  faCopy,
-  faDisplay,
-  faGear,
-  faKeyboard,
-  faPen,
-  faPlus,
-  faSave,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-
-library.add(
-  faKeyboard,
-  faDisplay,
-  faGear,
-  faSave,
-  faTrash,
-  faPen,
-  faCopy,
-  faPlus,
-);
-
-//#endregion
-
-//#region Router
-
-import router from "./router";
-
-//#endregion
+import 'primeicons/primeicons.css';
+import PrimeVue from 'primevue/config';
+import { VueQueryPlugin } from '@tanstack/vue-query';
+import router from "@/router";
+import "@fortawesome/fontawesome-free/css/all.min.css";
+import Tooltip from 'primevue/tooltip';
+import Aura from '@primevue/themes/aura';
+import ToastService from 'primevue/toastservice';
 
 createApp(App)
+  .directive('tooltip', Tooltip)
   .use(router)
-  .component("font-awesome-icon", FontAwesomeIcon)
+  .use(PrimeVue, {
+    theme: {
+      preset: Aura,
+      options: {
+        darkModeSelector: '.my-app-dark'
+      }
+    }
+  })
+  .use(VueQueryPlugin)
+  .use(ToastService)
   .mount("#app");

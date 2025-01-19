@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ScreenTemperature.Entities;
+using ScreenTemperature.Entities.Commands;
 using ScreenTemperature.Entities.Configurations;
-using ScreenTemperature.Entities.KeyBindingActions;
 using Path = System.IO.Path;
 
 namespace ScreenTemperature;
@@ -10,13 +10,11 @@ public class DatabaseContext : DbContext
 {
     private readonly IWebHostEnvironment _webHostEnvironment;
 
-    public DbSet<Profile> Profiles { get; set; }
-
-    public DbSet<KeyBindingAction> KeyBindingActions { get; set; }
-    public DbSet<ApplyProfileAction> ApplyProfileActions { get; set; }
-    //public DbSet<DecreaseBrightnessBy> DecreaseBrightnessByActions { get; set; }
-    //public DbSet<IncreaseBrightnessBy> IncreaseBrightnessByActions { get; set; }
-    //public DbSet<SetBrightnessTo> SetBrightnessToActions { get; set; }
+    public DbSet<Command> Commands { get; set; }
+    public DbSet<ApplyConfigurationCommand> ApplyConfigurationCommands { get; set; }
+    //public DbSet<DecreaseBrightnessBy> DecreaseBrightnessByCommands { get; set; }
+    //public DbSet<IncreaseBrightnessBy> IncreaseBrightnessByCommands { get; set; }
+    //public DbSet<SetBrightnessTo> SetBrightnessToCommands { get; set; }
 
     public DbSet<KeyBinding> KeyBindings { get; set; }
 
@@ -73,8 +71,7 @@ public class DatabaseContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<KeyBindingAction>().UseTptMappingStrategy(); // for polymorphism
+        modelBuilder.Entity<Command>().UseTptMappingStrategy(); // for polymorphism
         modelBuilder.Entity<Configuration>().UseTptMappingStrategy(); // for polymorphism
-        modelBuilder.Entity<ApplyProfileAction>().HasOne(p => p.Profile).WithMany(x => x.ApplyProfileActions).OnDelete(DeleteBehavior.NoAction);
     }
 }

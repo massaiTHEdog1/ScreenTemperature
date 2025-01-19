@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using ScreenTemperature.DTOs;
 using ScreenTemperature.DTOs.Configurations;
 using ScreenTemperature.Entities.Configurations;
 using ScreenTemperature.Mappers;
+using System.Configuration;
 
 namespace ScreenTemperature.Services;
 
@@ -11,17 +11,20 @@ public interface IConfigurationService
     Task<ServiceResult<IList<ConfigurationDto>>> GetAllAsync();
     Task<ServiceResult<ConfigurationDto>> CreateOrUpdateAsync(ConfigurationDto dto);
     Task<ServiceResult> DeleteAsync(Guid id);
+    Task<ServiceResult<ConfigurationApplyResultDto>> ApplyAsync(ConfigurationDto dto);
 }
 
 public class ConfigurationService : IConfigurationService
 {
     private readonly ILogger<ConfigurationService> _logger;
     private readonly DatabaseContext _databaseContext;
+    private readonly IScreenService _screenService;
 
-    public ConfigurationService(ILogger<ConfigurationService> logger, DatabaseContext databaseContext)
+    public ConfigurationService(ILogger<ConfigurationService> logger, DatabaseContext databaseContext, IScreenService screenService)
     {
         _logger = logger;
         _databaseContext = databaseContext;
+        _screenService = screenService;
     }
 
     public async Task<ServiceResult<IList<ConfigurationDto>>> GetAllAsync()
@@ -32,37 +35,6 @@ public class ConfigurationService : IConfigurationService
         {
             Success = true,
             Data = entities.Select(x => x.ToDto()).ToList()
-        };
-    }
-
-    public async Task<ServiceResult<ConfigurationDto>> CreateAsync(ConfigurationDto dto)
-    {
-        if (dto == null) return new ServiceResult<ConfigurationDto>()
-        {
-            Success = false,
-            Errors = ["Invalid parameter."]
-        };
-
-        // todo : Add dto validation
-
-        var entity = await _databaseContext.Configurations.FirstOrDefaultAsync(x => x.Id == dto.Id);
-
-        if (entity != null) return new ServiceResult<ConfigurationDto>()
-        {
-            Success = false,
-            Errors = ["This id already exists."]
-        };
-
-        
-
-        _databaseContext.Configurations.Add(entity);
-
-        await _databaseContext.SaveChangesAsync();
-
-        return new ServiceResult<ConfigurationDto>()
-        {
-            Success = true,
-            Data = entity.ToDto(),
         };
     }
 
@@ -90,6 +62,7 @@ public class ConfigurationService : IConfigurationService
             _databaseContext.Configurations.Add(entity);
         }
 
+        entity.Name = dto.Name;
         entity.DevicePath = dto.DevicePath;
         entity.ApplyBrightness = dto.ApplyBrightness;
         entity.Brightness = dto.Brightness;
@@ -130,19 +103,12 @@ public class ConfigurationService : IConfigurationService
             Errors = ["Invalid parameter."]
         };
         
-        var entity = await _databaseContext.Configurations.Include(x => x.Profiles).SingleOrDefaultAsync(x => x.Id == id);
+        var entity = await _databaseContext.Configurations.SingleOrDefaultAsync(x => x.Id == id);
 
         if(entity == null) return new ServiceResult()
         {
             Success = false,
             Errors = ["This configuration does not exist."]
-        };
-
-        // Cannot delete if this configuration is used in a profile
-        if (entity.Profiles?.Count > 0) return new ServiceResult()
-        {
-            Success = false,
-            Errors = ["This profile is used in at least one profile."]
         };
 
         _databaseContext.Configurations.Remove(entity);
@@ -153,5 +119,58 @@ public class ConfigurationService : IConfigurationService
         {
             Success = true
         };
+    }
+
+    public async Task<ServiceResult<ConfigurationApplyResultDto>> ApplyAsync(ConfigurationDto dto)
+    {
+        ServiceResult<bool>? applyBrightnessResult = null;
+        
+        if (dto.ApplyBrightness)
+            applyBrightnessResult = _screenService.ApplyBrightnessToScreen(dto.Brightness, dto.DevicePath);
+
+        if (dto is TemperatureConfigurationDto temperatureConfiguration)
+        {
+            ServiceResult<bool>? applyTemperatureResult = null;
+
+            if (temperatureConfiguration.ApplyIntensity)
+                applyTemperatureResult = _screenService.ApplyKelvinToScreen(temperatureConfiguration.Intensity, temperatureConfiguration.DevicePath);
+
+            return new ServiceResult<ConfigurationApplyResultDto>()
+            {
+                Success = true,
+                Data = new TemperatureConfigurationApplyResultDto()
+                {
+                    DevicePath = dto.DevicePath,
+                    SucceededToApplyBrightness = applyBrightnessResult?.Success ?? false,
+                    ApplyBrightnessErrors = applyBrightnessResult?.Errors,
+                    SucceededToApplyTemperature = applyTemperatureResult?.Success ?? false,
+                    ApplyTemperatureErrors = applyTemperatureResult?.Errors
+                }
+            };
+        }
+        else if (dto is ColorConfigurationDto colorConfiguration)
+        {
+            ServiceResult<bool>? applyColorResult = null;
+
+            if (colorConfiguration.ApplyColor)
+                applyColorResult = _screenService.ApplyColorToScreen(colorConfiguration.Color, colorConfiguration.DevicePath);
+
+            return new ServiceResult<ConfigurationApplyResultDto>()
+            {
+                Success = true,
+                Data = new ColorConfigurationApplyResultDto()
+                {
+                    DevicePath = colorConfiguration.DevicePath,
+                    SucceededToApplyBrightness = applyBrightnessResult?.Success ?? false,
+                    ApplyBrightnessErrors = applyBrightnessResult?.Errors,
+                    SucceededToApplyColor = applyColorResult?.Success ?? false,
+                    ApplyColorErrors = applyColorResult?.Errors
+                }
+            };
+        }
+        else
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -6,8 +6,7 @@ public abstract class Configuration
 {
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid Id { get; set; }
-
-    public List<Profile> Profiles { get; set; }
+    public string Name { get; set; }
 
     public string DevicePath { get; set; }
 

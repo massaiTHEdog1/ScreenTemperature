@@ -11,6 +11,7 @@ namespace ScreenTemperature.DTOs.Configurations
     public abstract class ConfigurationDto
     {
         public Guid Id { get; set; }
+        public string Name { get; set; }
         public string DevicePath { get; set; }
         public bool ApplyBrightness { get; set; }
         public byte Brightness { get; set; }

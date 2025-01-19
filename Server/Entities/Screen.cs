@@ -42,4 +42,12 @@ public class Screen
     /// Returns the height.
     /// </summary>
     public int Height { get; set; }
+
+    public bool IsDDCSupported { get; set; }
+
+    public bool IsBrightnessSupported { get; set; }
+
+    public int MaxBrightness { get; set; }
+    public int MinBrightness { get; set; }
+    public int CurrentBrightness { get; set; }
 }

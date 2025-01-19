@@ -12,6 +12,7 @@ namespace ScreenTemperature.Mappers
                 return new TemperatureConfigurationDto()
                 {
                     Id = temperatureConfiguration.Id,
+                    Name = temperatureConfiguration.Name,
                     DevicePath = temperatureConfiguration.DevicePath,
                     Intensity = temperatureConfiguration.Intensity,
                     Brightness = temperatureConfiguration.Brightness,
@@ -24,6 +25,7 @@ namespace ScreenTemperature.Mappers
                 return new ColorConfigurationDto()
                 {
                     Id = colorConfiguration.Id,
+                    Name = colorConfiguration.Name,
                     DevicePath = colorConfiguration.DevicePath,
                     Color = colorConfiguration.Color,
                     Brightness = colorConfiguration.Brightness,

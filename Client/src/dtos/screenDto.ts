@@ -1,13 +1,14 @@
-export class ScreenDto {
-  public DevicePath: string = "";
-  public Label: string = "";
-  public IsPrimary: boolean = false;
-  public X: number = 0;
-  public Y: number = 0;
-  public Width: number = 0;
-  public Height: number = 0;
-
-  public constructor(dto?: Partial<ScreenDto>) {
-    Object.assign(this, dto);
-  }
+export interface ScreenDto {
+  devicePath: string;
+  label: string;
+  isPrimary: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isDDCSupported: boolean;
+  isBrightnessSupported: boolean;
+  minBrightness: number;
+  maxBrightness: number;
+  currentBrightness: number;
 }
