@@ -172,7 +172,10 @@ const onScreenClick = (event: MouseEvent | KeyboardEvent, screen: Screen) => {
       </p>
       <p>{{ screen.label }}</p>
       <p>{{ screen.width }} x {{ screen.height }}</p>
-      <p v-tooltip.top="'Current brightness'" v-if="screen.isBrightnessSupported">
+      <p
+        v-tooltip.top="'Current brightness'"
+        v-if="screen.isBrightnessSupported"
+      >
         <i class="pi pi-lightbulb" /> {{ (screen.currentBrightness! - screen.brightnessMinimum!) * 100 / (screen.brightnessMaximum! - screen.brightnessMinimum!) }}%
       </p>
     </div>

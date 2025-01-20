@@ -28,8 +28,8 @@ const marginLeft = computed(() => {
     <div class="w-full h-fit max-h-[min(50%,250px)] p-5 bg-[#171717] mx-auto rounded-lg border-2 border-[#4D4D4D]">
       <ScreensViewer
         :screens="screens ?? []"
-        :allow-empty-selection="true"
-        :allow-multiple-selection="false"
+        :allowEmptySelection="true"
+        :allowMultipleSelection="false"
         @selection-changed="(e) => selectedScreens = e"
       >
         <template #no-screen>
@@ -77,7 +77,7 @@ const marginLeft = computed(() => {
       </div>
     </div>
   </div>
-  <Toast/>
+  <Toast />
 </template>
 
 <style scoped>

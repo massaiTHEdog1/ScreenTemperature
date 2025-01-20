@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { useScreens } from '@/composables/useScreens';
 import { ColorConfigurationDto } from '@/dtos/configurations/colorConfigurationDto';
@@ -284,7 +283,7 @@ const onSaveClick = () => {
             <Checkbox
               v-model="form.isTemperatureChecked"
               :binary="true"
-              input-id="temperature"
+              inputId="temperature"
             />
             <label for="temperature">Temperature</label>
           </div>
@@ -308,7 +307,7 @@ const onSaveClick = () => {
             <Checkbox
               v-model="form.isColorChecked"
               :binary="true"
-              input-id="color"
+              inputId="color"
             />
             <label for="color">Color</label>
           </div>
@@ -325,7 +324,7 @@ const onSaveClick = () => {
             :disabled="!isBrightnessSupported"
             v-model="form.isBrightnessChecked"
             :binary="true"
-            input-id="brightness"
+            inputId="brightness"
           />
           <label for="brightness">Brightness</label>
         </div>

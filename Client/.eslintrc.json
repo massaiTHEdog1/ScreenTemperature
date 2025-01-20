@@ -1,0 +1,29 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:vue/vue3-strongly-recommended"
+  ],
+  "parser": "vue-eslint-parser",
+  "parserOptions": {
+    "parser": "@typescript-eslint/parser",
+    "ecmaVersion": 2020,
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "rules": {
+    "vue/multi-word-component-names": "off",
+    "semi": "error", // error when line not ending with ;
+    "vue/attribute-hyphenation": ["error", "never"],
+    "indent": "off",
+    "@typescript-eslint/indent": ["error", 2], // set indent to 2,
+    "@typescript-eslint/no-empty-interface": ["error", {
+        "allowSingleExtends": true
+      }
+    ],
+    "@typescript-eslint/no-non-null-assertion": ["off"],
+    "vue/no-use-v-if-with-v-for": ["off"]
+  },
+  "plugins": ["@typescript-eslint"]
+}
