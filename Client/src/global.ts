@@ -59,7 +59,18 @@ export const saveConfiguration = async (configuration: ConfigurationDto) : Promi
   throw Error();
 };
 
+export const deleteConfiguration = async (configuration: ConfigurationDto) : Promise<void> => {
+  const response = await fetch(`${import.meta.env.VITE_SERVER_BASE_URL}/api/configurations/${configuration.id}`, { 
+    method: "DELETE",
+  });
+
+  if(response.status == 200)
+    return;
+
+  throw Error();
+};
+
 export const isNullOrWhitespace = ( input?: string ) => {
   return (typeof input === 'undefined' || input == null)
     || input.replace(/\s/g, '').length < 1;
-}
+};

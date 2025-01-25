@@ -4,7 +4,7 @@ import { ColorConfigurationDto } from '@/dtos/configurations/colorConfigurationD
 import { isColorConfigurationApplyResult, isTemperatureConfigurationApplyResult } from '@/dtos/configurations/configurationApplyResultDto';
 import { ConfigurationDiscriminator, ConfigurationDto } from '@/dtos/configurations/configurationDto';
 import { TemperatureConfigurationDto } from '@/dtos/configurations/temperatureConfigurationDto';
-import { Routes, applyConfiguration, getConfigurations, isNullOrWhitespace, saveConfiguration } from '@/global';
+import { Routes, applyConfiguration, deleteConfiguration, getConfigurations, isNullOrWhitespace, saveConfiguration } from '@/global';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { useToast } from 'primevue/usetoast';
 import Button from 'primevue/button';
@@ -16,6 +16,7 @@ import Slider from 'primevue/slider';
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { v4 as uuidv4 } from 'uuid';
+import DeletePopover from '../DeletePopover.vue';
 
 const props = defineProps({
   id: {
@@ -185,7 +186,7 @@ watch(succeededApply, () => {
   }
 });
 
-const isButtonApplyDisabled = computed(() => isApplying.value);
+const isButtonApplyDisabled = computed(() => isApplying.value || isSaving.value || isDeleting.value);
 
 const onApplyClick = () => {
 
@@ -217,7 +218,9 @@ watch(failedSave, () => {
 });
 
 const isButtonSaveDisabled = computed(() => 
+  isApplying.value == true ||
   isSaving.value == true || 
+  isDeleting.value == true ||
   isNullOrWhitespace(form.value.name) == true || 
   JSON.stringify(form.value) == JSON.stringify(initialForm.value) // if form is unchanged
 );
@@ -226,6 +229,45 @@ const onSaveClick = () => {
   if(isButtonSaveDisabled.value) return;  
 
   save(configurationFromForm.value);
+};
+
+const { mutate: deleteConf, isSuccess: succeededDelete, isError: failedDelete, isPending: isDeleting } = useMutation({
+  mutationFn: deleteConfiguration,
+});
+
+watch(succeededDelete, () => {
+  if(succeededDelete.value == true)
+  {
+    toast.add({ severity: "success", summary: "Success", detail: "Configuration deleted.", life: 3000 });
+    queryClient.invalidateQueries({ queryKey: ["configurations"]});
+    router.push({ name: Routes.CONFIGURATIONS });
+  }
+});
+
+watch(failedDelete, () => {
+  if(failedDelete.value == true)
+  {
+    toast.add({ severity: "error", summary: "Failed", detail: "Failed to delete configuration.", life: 3000 });
+  }
+});
+
+const isButtonDeleteDisabled = computed(() => 
+  isApplying.value == true ||
+  isSaving.value == true ||
+  isDeleting.value == true
+);
+
+const deletePopover = ref<InstanceType<typeof DeletePopover>>();
+
+const onDeleteClick = (e: MouseEvent) => {
+  if(isButtonDeleteDisabled.value) return;
+
+  deletePopover.value!.show(e);
+};
+
+const onDeleteSecondClick = () => {
+  deletePopover.value!.hide();
+  deleteConf(configurationFromForm.value);
 };
 
 </script>
@@ -343,6 +385,23 @@ const onSaveClick = () => {
           @click="onSaveClick"
           :loading="isSaving"
           :disabled="isButtonSaveDisabled"
+        />
+
+        <Button
+          v-if="configuration != undefined"
+          class="w-fit"
+          severity="danger"
+          icon="pi pi-trash"
+          label="Delete"
+          @click="onDeleteClick"
+          :loading="isDeleting"
+          :disabled="isButtonDeleteDisabled"
+        />
+
+        <DeletePopover
+          ref="deletePopover"
+          @on-delete-click="onDeleteSecondClick"
+          @on-cancel-click="deletePopover?.hide()"
         />
 
         <Button
