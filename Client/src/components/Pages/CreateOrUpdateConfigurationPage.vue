@@ -60,7 +60,7 @@ const { data: configurations } = useQuery({
 });
 
 const { selectedScreens, screens } = useScreens();
-const selectedScreen = computed(() => selectedScreens.value?.[0]);
+const selectedScreen = computed(() => screens.value.find(x => x.id == selectedScreens.value[0]));
 
 const isBrightnessSupported = computed(() => selectedScreen.value?.isBrightnessSupported == true);
 
@@ -83,20 +83,14 @@ watch([configuration], () => {
   reinitializeForm();
 }, { immediate: true });
 
-const isFirstScreenLoading = ref(true);
-
 watch(screens, () => {
-  if(isFirstScreenLoading.value == true)
+  const screenToSelect = screens.value?.find(x => x.id == configuration.value?.devicePath);
+
+  if(screenToSelect != undefined)
   {
-    const screenToSelect = screens.value?.find(x => x.id == configuration.value?.devicePath);
+    selectedScreens.value = [screenToSelect.id];
 
-    if(screenToSelect != undefined)
-    {
-      selectedScreens.value = [screenToSelect];
-      isFirstScreenLoading.value = false;
-
-      reinitializeForm();
-    }
+    reinitializeForm();
   }
 }, { immediate: true });
 
@@ -247,7 +241,7 @@ const onSaveClick = () => {
     />
 
     <div
-      v-if="(selectedScreens?.length ?? 0) != 1"
+      v-if="selectedScreens.length != 1"
       class="text-center"
     >
       Please select a screen.
@@ -255,7 +249,7 @@ const onSaveClick = () => {
     <template v-else>
       <div class="field">
         <p>Target screen</p>
-        <p>{{ `${selectedScreens![0].index} - ${selectedScreens![0].label}` }}</p>
+        <p>{{ `${selectedScreen?.index} - ${selectedScreen?.label}` }}</p>
       </div>
       
       <div class="field">

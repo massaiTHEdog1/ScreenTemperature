@@ -33,12 +33,15 @@ const { data: configurations, isFetching: isFetchingConfigurations, isError: fai
       <p v-if="(configurations?.length ?? 0) == 0">
         You don't have any configuration... Yet !
       </p>
-      <div v-else class="flex gap-2">
+      <div
+        v-else
+        class="flex gap-2"
+      >
         <SquareButton 
           v-for="element in configurations" 
           :key="element.id"
           :label="element.name"
-          class="w-[100px] h-[100px]"
+          class="!w-[100px] !h-[100px]"
           @click="router.push({ name: Routes.CONFIGURATIONS_UPDATE, params: { id: element.id} })"
           @keyup.enter="router.push({ name: Routes.CONFIGURATIONS_UPDATE, params: { id: element.id} })"
         />

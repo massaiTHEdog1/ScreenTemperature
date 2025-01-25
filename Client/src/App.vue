@@ -26,12 +26,7 @@ const marginLeft = computed(() => {
 <template>
   <div class="h-full flex flex-col gap-2 bg-[#1B2126] text-white p-3">
     <div class="w-full h-fit max-h-[min(50%,250px)] p-5 bg-[#171717] mx-auto rounded-lg border-2 border-[#4D4D4D]">
-      <ScreensViewer
-        :screens="screens ?? []"
-        :allowEmptySelection="true"
-        :allowMultipleSelection="false"
-        @selection-changed="(e) => selectedScreens = e"
-      >
+      <ScreensViewer>
         <template #no-screen>
           <div class="flex items-center">
             <ProgressSpinner v-if="isFetchingScreens || failedFetchingScreens" />
@@ -69,7 +64,7 @@ const marginLeft = computed(() => {
             />
             <component
               :is="route.matched.find(x => x.name == Routes.CONFIGURATIONS_UPDATE)?.components?.default"
-              v-bind="route.matched.find(x => x.name == Routes.CONFIGURATIONS_UPDATE)?.props.default(route)"
+              v-bind="(route.matched.find(x => x.name == Routes.CONFIGURATIONS_UPDATE)?.props as any).default(route)"
               v-if="route.matched.some(x => x.name == Routes.CONFIGURATIONS_UPDATE)"
             />
           </div>
