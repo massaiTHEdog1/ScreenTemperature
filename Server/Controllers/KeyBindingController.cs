@@ -1,60 +1,131 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ScreenTemperature;
 using ScreenTemperature.DTOs;
-using ScreenTemperature.Services;
+using ScreenTemperature.Entities;
+using ScreenTemperature.Mappers;
 using System.ComponentModel.DataAnnotations;
 
-[ApiController]
 [AllowAnonymous]
 public class KeyBindingController
 {
-    private readonly IKeyBindingService _keyBindingService;
+    private readonly ILogger<KeyBindingController> _logger;
+    private readonly DatabaseContext _databaseContext;
 
-    public KeyBindingController(IKeyBindingService keyBindingService)
+    public KeyBindingController(ILogger<KeyBindingController> logger, DatabaseContext databaseContext)
     {
-        _keyBindingService = keyBindingService;
+        _logger = logger;
+        _databaseContext = databaseContext;
     }
 
     [HttpGet("/api/keybindings")]
-    public async Task<Results<Ok<IList<KeyBindingDto>>, BadRequest<APIErrorResponseDto>>> GetAllAsync(CancellationToken ct)
+    public async Task<IResult> GetAllAsync(CancellationToken ct)
     {
-        var result = await _keyBindingService.ListKeyBindingsAsync(ct);
+        var bindings = await _databaseContext.KeyBindings.Include(binding => binding.Commands).ToListAsync();
 
-        if (!result.Success) return TypedResults.BadRequest(new APIErrorResponseDto(result.Errors));
-
-        return TypedResults.Ok(result.Data);
+        return TypedResults.Ok(bindings.Select(x => x.ToDto()));
     }
 
-    [HttpPost("/api/keybindings")]
-    public async Task<Results<Ok<KeyBindingWithHotKeyRegistrationResultDto>, BadRequest<APIErrorResponseDto>>> CreateAsync([Required] KeyBindingDto dto, CancellationToken ct)
+
+
+    [HttpPut("/api/keybindings")]
+    public async Task<IResult> CreateOrUpdateAsync([Required] KeyBindingDto dto, CancellationToken ct)
     {
-        var result = await _keyBindingService.CreateOrUpdateKeyBindingAsync(dto, ct);
+        // todo : Add dto validation
 
-        if (!result.Success) return TypedResults.BadRequest(new APIErrorResponseDto(result.Errors));
+        var shouldRegisterBinding = false;
 
-        return TypedResults.Ok(result.Data);
+        // Get entity in database or create a new one
+        var entity = await _databaseContext.KeyBindings.Include(x => x.Commands).FirstOrDefaultAsync(x => x.Id == dto.Id, ct);
+
+        // if it is an insertion
+        if (entity == null)
+        {
+            entity = new KeyBinding() { Id = dto.Id };
+            _databaseContext.KeyBindings.Add(entity);
+            shouldRegisterBinding = true;
+        }
+        // if it is an update
+        else
+        {
+            // if binding is updated
+            if (entity.KeyCode != dto.KeyCode || entity.Alt != dto.Alt || entity.Control != dto.Control || entity.Shift != dto.Shift)
+            {
+                await HotKeyManager.UnregisterHotKeyAsync(entity.KeyCode, entity.Alt, entity.Control, entity.Shift);
+                shouldRegisterBinding = true;
+            }
+        }
+
+        entity.KeyCode = dto.KeyCode;
+        entity.Shift = dto.Shift;
+        entity.Alt = dto.Alt;
+        entity.Control = dto.Control;
+
+        #region Configurations
+
+        if (entity.Commands == null) entity.Commands = [];
+
+        var idsCommandsInDto = dto.Commands?.Select(x => x.Id) ?? [];
+        var idsCommandsInEntity = entity.Commands!.Select(x => x.Id) ?? [];
+
+        var commandsToCreate = dto.Commands?.Where(x => !idsCommandsInEntity.Contains(x.Id)) ?? [];
+        var commandsToDelete = entity.Commands!.Where(x => !idsCommandsInDto.Contains(x.Id)) ?? [];
+
+        // Delete all commands not present in dto
+        foreach (var command in commandsToDelete)
+        {
+            entity.Commands.Remove(command);
+        }
+
+        // Create each command not present in entity
+        foreach (var command in commandsToCreate)
+        {
+            throw new NotImplementedException();
+        }
+
+        // Update all commands in entity
+        foreach (var entityCommand in entity.Commands!)
+        {
+            var dtoCommand = dto.Commands!.First(x => x.Id == entityCommand.Id);
+
+            throw new NotImplementedException();
+        }
+
+        #endregion
+
+        await _databaseContext.SaveChangesAsync(ct);
+
+        var isHotKeyRegistered = true;
+
+        if (shouldRegisterBinding)
+        {
+            isHotKeyRegistered = await HotKeyManager.RegisterHotKeyAsync(dto.KeyCode, dto.Alt, dto.Control, dto.Shift);
+        }
+
+
+        return TypedResults.Ok(new KeyBindingWithHotKeyRegistrationResultDto()
+        {
+            IsHotKeyRegistered = isHotKeyRegistered,
+            KeyBinding = entity.ToDto()
+        });
     }
 
-    [HttpDelete("/api/keybindings/{id}")]
-    public async Task<Results<Ok, BadRequest<APIErrorResponseDto>>> DeleteAsync([Required] Guid id, CancellationToken ct)
-    {
-        var result = await _keyBindingService.DeleteKeyBindingAsync(id, ct);
 
-        if (!result.Success) return TypedResults.BadRequest(new APIErrorResponseDto(result.Errors));
+
+    [HttpDelete("/api/keybindings/{id:guid}")]
+    public async Task<IResult> DeleteAsync([Required] Guid id, CancellationToken ct)
+    {
+        var entity = await _databaseContext.KeyBindings.SingleOrDefaultAsync(x => x.Id == id, cancellationToken: ct);
+
+        if (entity == null) return TypedResults.BadRequest("This key binding does not exist.");
+
+        _databaseContext.Remove(entity);
+
+        await _databaseContext.SaveChangesAsync(ct);
+
+        await HotKeyManager.UnregisterHotKeyAsync(entity.KeyCode, entity.Alt, entity.Control, entity.Shift);
 
         return TypedResults.Ok();
-    }
-
-    [HttpPut("/api/keybindings/{id}")]
-    public async Task<Results<Ok<KeyBindingWithHotKeyRegistrationResultDto>, BadRequest<APIErrorResponseDto>>> UpdateAsync([Required] Guid id, [FromBody][Required] KeyBindingDto dto, CancellationToken ct)
-    {
-        if(id != dto.Id) return TypedResults.BadRequest(new APIErrorResponseDto([$"{nameof(KeyBindingDto.Id)} mismatch."]));
-
-        var result = await _keyBindingService.CreateOrUpdateKeyBindingAsync(dto, ct);
-
-        if (!result.Success) return TypedResults.BadRequest(new APIErrorResponseDto(result.Errors));
-
-        return TypedResults.Ok(result.Data);
     }
 }

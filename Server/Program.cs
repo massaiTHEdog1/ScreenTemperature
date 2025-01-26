@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using ScreenTemperature.DTOs.Configurations;
+using ScreenTemperature.Hubs;
 using ScreenTemperature.Middlewares;
 using ScreenTemperature.Services;
 using Vernou.Swashbuckle.HttpResultsAdapter;
@@ -17,10 +17,8 @@ internal class Program
         // Add services to the container.
         builder.Services.AddControllers();
 
-        builder.Services.AddScoped<IScreenService, ScreenService>();
+        builder.Services.AddSingleton<IScreenService, ScreenService>();
         builder.Services.AddScoped<IOptionsService, OptionsService>();
-        builder.Services.AddScoped<IKeyBindingService, KeyBindingService>();
-        builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 
         builder.Services.AddDbContext<DatabaseContext>();
 
@@ -34,6 +32,8 @@ internal class Program
             });
         }
 
+        builder.Services.AddSignalR();
+
         #endregion
 
         if (builder.Environment.IsDevelopment())
@@ -43,7 +43,7 @@ internal class Program
                 options.AddPolicy(name: "devCORS",
                                   policy =>
                                   {
-                                      policy.WithOrigins("http://localhost:5173").AllowAnyMethod().AllowAnyHeader();
+                                      policy.WithOrigins("http://localhost:5173").AllowAnyMethod().AllowAnyHeader().AllowCredentials();
                                       //policy.WithMethods()
                                   });
             });
@@ -66,6 +66,12 @@ internal class Program
         }
 
         HotKeyManager.Init(app);
+
+        Task.Run(async () =>
+        {
+            var screenService = app.Services.GetService<IScreenService>();
+            await screenService.GetScreensAsync();// load screens in memory
+        });
 
         app.UseMiddleware<ExceptionMiddleware>();
 
@@ -94,7 +100,7 @@ internal class Program
 
         app.MapControllers();
 
-        
+        app.MapHub<Hub>("/hub");
 
         app.Run();
     }

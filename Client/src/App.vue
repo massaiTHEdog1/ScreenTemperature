@@ -5,12 +5,15 @@ import ProgressSpinner from 'primevue/progressspinner';
 import { useScreens } from '@/composables/useScreens';
 import Toast from 'primevue/toast';
 import { ref } from 'vue';
+import { useSignalR } from './composables/useSignalR';
 
 const route = useRoute();
 
 const { isFetching: isFetchingScreens, isError: failedFetchingScreens } = useScreens();
 
 const transitionTime = ref(150);
+
+useSignalR();
 
 </script>
 

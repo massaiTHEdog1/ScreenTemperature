@@ -20,9 +20,9 @@ namespace ScreenTemperature.Mappers
                 Label = entity.Label,
                 IsDDCSupported = entity.IsDDCSupported,
                 IsBrightnessSupported = entity.IsBrightnessSupported,
-                MinBrightness = entity.MinBrightness,
-                MaxBrightness = entity.MaxBrightness,
-                CurrentBrightness = entity.CurrentBrightness
+                MinBrightness = (int)entity.MinBrightness,
+                MaxBrightness = (int)entity.MaxBrightness,
+                CurrentBrightness = (int)entity.CurrentBrightness
             };
         }
     }

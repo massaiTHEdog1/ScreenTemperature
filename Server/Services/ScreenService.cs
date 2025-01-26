@@ -11,13 +11,10 @@ namespace ScreenTemperature.Services;
 
 public interface IScreenService
 {
-    /// <summary>
-    /// Returns a list of all attached screens on this machine
-    /// </summary>
-    ServiceResult<IList<ScreenDto>> GetScreens();
-    ServiceResult<bool> ApplyKelvinToScreen(int value, string devicePath);
-    ServiceResult<bool> ApplyColorToScreen(string stringColor, string devicePath);
-    ServiceResult<bool> ApplyBrightnessToScreen(int brightness, string devicePath);
+    Task<IList<Screen>> GetScreensAsync(bool fromCache = true);
+    Task<bool> ApplyKelvinToScreenAsync(int value, string devicePath);
+    Task<bool> ApplyColorToScreenAsync(string stringColor, string devicePath);
+    Task<bool> ApplyBrightnessToScreenAsync(int brightness, string devicePath);
 }
 
 public class ScreenService : IScreenService
@@ -85,15 +82,6 @@ public class ScreenService : IScreenService
 
     [DllImport("Dxva2.dll")]
     private static extern bool GetNumberOfPhysicalMonitorsFromHMONITOR(IntPtr hMonitor, out uint pdwNumberOfPhysicalMonitors);
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    private struct PHYSICAL_MONITOR
-    {
-        public IntPtr hPhysicalMonitor;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-        public string szPhysicalMonitorDescription;
-    }
 
     [DllImport("Dxva2.dll")]
     private static extern bool GetPhysicalMonitorsFromHMONITOR(IntPtr hMonitor, uint dwPhysicalMonitorArraySize, [Out] PHYSICAL_MONITOR[] pPhysicalMonitorArray);
@@ -183,12 +171,22 @@ public class ScreenService : IScreenService
         return true;
     }
 
+    private IList<Screen> _screens = new List<Screen>();
+
     /// <summary>
     /// Returns a list of all attached screens on this machine
     /// </summary>
-    public ServiceResult<IList<ScreenDto>> GetScreens()
+    public async Task<IList<Screen>> GetScreensAsync(bool fromCache = true)
     {
-        var screens = new List<Screen>();
+        if(fromCache && _screens.Count > 0) return _screens;
+
+        foreach(var screen in _screens)
+        {
+            // clean up
+            DestroyPhysicalMonitors(1, screen.PhysicalMonitors);
+        }
+
+        _screens = new List<Screen>();
 
         foreach (var display in WindowsDisplayAPI.Display.GetDisplays())// for each windows display
         {
@@ -208,9 +206,7 @@ public class ScreenService : IScreenService
             if (isBrightnessSupported)
                 GetMonitorBrightness(physicalMonitors[0].hPhysicalMonitor, ref min, ref current, ref max);
 
-            DestroyPhysicalMonitors(1, physicalMonitors);
-
-            screens.Add(new Screen()
+            _screens.Add(new Screen()
             {
                 Label = display.ToPathDisplayTarget().FriendlyName,
                 Width = display.CurrentSetting.Resolution.Width,
@@ -221,20 +217,17 @@ public class ScreenService : IScreenService
                 DevicePath = display.DevicePath,
                 IsDDCSupported = isDDCsupported,
                 IsBrightnessSupported = isBrightnessSupported,
-                MinBrightness = (int)min,
-                MaxBrightness = (int)max,
-                CurrentBrightness = (int)current,
+                MinBrightness = min,
+                MaxBrightness = max,
+                CurrentBrightness = current,
+                PhysicalMonitors = physicalMonitors,
             });
         }
 
-        return new ServiceResult<IList<ScreenDto>>()
-        {
-            Success = true,
-            Data = screens.Select(x => x.ToDto()).ToList()
-        };
+        return _screens;
     }
 
-    private ServiceResult<bool> ApplyRGBToScreen(float red, float green, float blue, string devicePath)
+    private bool ApplyRGBToScreen(float red, float green, float blue, string devicePath)
     {
         var array = new ushort[3 * 256];
 
@@ -247,11 +240,7 @@ public class ScreenService : IScreenService
 
         var display = WindowsDisplayAPI.Display.GetDisplays().FirstOrDefault(x => x.DevicePath == devicePath);
 
-        if (display == null) return new ServiceResult<bool>()
-        {
-            Success = false,
-            Errors = [$"Could not find screen '{devicePath}'."]
-        };
+        if (display == null) throw new Exception($"Could not find screen '{devicePath}'.");
 
         var hdc = CreateDC(display.DisplayName, display.DevicePath, null, IntPtr.Zero);
 
@@ -264,26 +253,18 @@ public class ScreenService : IScreenService
 
         pinnedArray.Free();
 
-        return new ServiceResult<bool>()
-        {
-            Success = succeeded,
-            Errors = !succeeded ? ["Value is not supported."] : null
-        };
+        return succeeded;
     }
 
     /// <summary>
     /// Changes screen color from kelvin value
     /// Thanks to Tanner Helland for his algorithm http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
     /// </summary>
-    public ServiceResult<bool> ApplyKelvinToScreen(int value, string devicePath)
+    public async Task<bool> ApplyKelvinToScreenAsync(int value, string devicePath)
     {
         if(value < 1000 || value > 40000)
         {
-            return new ServiceResult<bool>()
-            {
-                Success = false,
-                Errors = ["Invalid value."]
-            };
+            throw new Exception("Invalid value.");
         }
 
         float kelvin = value;
@@ -299,6 +280,7 @@ public class ScreenService : IScreenService
         {
             red = temperature - 60;
             red = 329.698727446f * ((float)Math.Pow(red, -0.1332047592));
+
             if (red < 0) red = 0;
             if (red > 255) red = 255;
         }
@@ -307,15 +289,9 @@ public class ScreenService : IScreenService
         {
             green = temperature;
             green = 99.4708025861f * (float)Math.Log(green) - 161.1195681661f;
-            if (green < 0)
-            {
-                green = 0;
-            }
 
-            if (green > 255)
-            {
-                green = 255;
-            }
+            if (green < 0) green = 0;
+            if (green > 255) green = 255;
         }
         else
         {
@@ -356,56 +332,35 @@ public class ScreenService : IScreenService
         return ApplyRGBToScreen(red, green, blue, devicePath);
     }
 
-    public ServiceResult<bool> ApplyColorToScreen(string stringColor, string devicePath)
+    public async Task<bool> ApplyColorToScreenAsync(string stringColor, string devicePath)
     {
         ColorConverter converter = new ColorConverter();
         var color = (Color?)converter.ConvertFromString(stringColor);
 
         if (!color.HasValue)
         {
-            return new ServiceResult<bool>()
-            {
-                Success = false,
-                Errors = ["Invalid color."]
-            };
+            throw new Exception("Invalid value.");
         }
 
         return ApplyRGBToScreen(color.Value.R, color.Value.G, color.Value.B, devicePath);
     }
 
-    public ServiceResult<bool> ApplyBrightnessToScreen(int brightness, string devicePath)
+    public async Task<bool> ApplyBrightnessToScreenAsync(int brightness, string devicePath)
     {
-        if (!GetScreenPhysicalMonitor(devicePath, out PHYSICAL_MONITOR[] physicalMonitors)) return new ServiceResult<bool>()
-        {
-            Success = false,
-            Errors = [$"Could not find screen '{devicePath}'."]
-        };
+        var screen = _screens.FirstOrDefault(x => x.DevicePath ==  devicePath);
+
+        if (screen == null) throw new Exception($"Could not find screen '{devicePath}'.");
 
         var succeeded = false;
 
-        if(GetMonitorCapabilities(physicalMonitors[0].hPhysicalMonitor, out MC_CAPS pdwMonitorCapabilities, out MC_SUPPORTED_COLOR_TEMPERATURE pdwSupportedColorTemperatures))
-        {
-            if(pdwMonitorCapabilities.HasFlag(MC_CAPS.MC_CAPS_BRIGHTNESS))
-            {
-                uint min = 0, max = 0, current = 0;
+        // calculate maximum when minimum is 0
+        var maximum = screen.MaxBrightness - screen.MinBrightness;
 
-                GetMonitorBrightness(physicalMonitors[0].hPhysicalMonitor, ref min, ref current, ref max);
+        // brightness is in percentage
+        var valueToApply = (uint)brightness * maximum / 100 + screen.MinBrightness;
 
-                // calculate maximum when minimum is 0
-                var maximum = max - min;
+        succeeded = SetMonitorBrightness(screen.PhysicalMonitors[0].hPhysicalMonitor, valueToApply);
 
-                // brightness is in percentage
-                var valueToApply = (uint)brightness * maximum / 100 + min;
-
-                succeeded = SetMonitorBrightness(physicalMonitors[0].hPhysicalMonitor, valueToApply);
-            }
-        }
-
-        DestroyPhysicalMonitors(1, physicalMonitors);
-
-        return new ServiceResult<bool>()
-        {
-            Success = succeeded,
-        };
+        return succeeded;
     }
 }

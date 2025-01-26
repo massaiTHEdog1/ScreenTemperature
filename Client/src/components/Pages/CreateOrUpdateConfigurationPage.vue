@@ -13,10 +13,11 @@ import ColorPicker from 'primevue/colorpicker';
 import InputText from 'primevue/inputtext';
 import SelectButton from 'primevue/selectbutton';
 import Slider from 'primevue/slider';
-import { computed, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { v4 as uuidv4 } from 'uuid';
 import DeletePopover from '../DeletePopover.vue';
+import { useSignalR } from '@/composables/useSignalR';
 
 const props = defineProps({
   id: {
@@ -145,55 +146,7 @@ const configurationFromForm = computed<ConfigurationDto>(() => {
 
 const router = useRouter();
 
-const { mutate: apply, isSuccess: succeededApply, isError: failedApply, data: applyResult, isPending: isApplying } = useMutation({
-  mutationFn: applyConfiguration,
-});
-
 const toast = useToast();
-
-watch(failedApply, () => {
-  if(failedApply.value == true)
-  {
-    toast.add({ severity: "error", summary: "Error", detail: "An error occured.", life: 3000 });
-  }
-});
-
-watch(succeededApply, () => {
-  if(succeededApply.value == true && applyResult.value != undefined)
-  {
-    if(form.value.isBrightnessChecked == true){
-      if(applyResult.value.succeededToApplyBrightness == false)
-        toast.add({ severity: "error", summary: "Error", detail: "Failed to apply brightness.", life: 3000 });
-      else
-        toast.add({ severity: "success", summary: "Success", detail: "Brightness applied.", life: 3000 });
-    }
-
-    if(isTemperatureConfigurationApplyResult(applyResult.value)){
-      if(applyResult.value.succeededToApplyTemperature == false)
-        toast.add({ severity: "error", summary: "Error", detail: "Failed to apply temperature.", life: 3000 });
-      else
-        toast.add({ severity: "success", summary: "Success", detail: "Temperature applied.", life: 3000 });
-    }
-
-    if(isColorConfigurationApplyResult(applyResult.value)) {
-      if(applyResult.value.succeededToApplyColor == false)
-        toast.add({ severity: "error", summary: "Error", detail: "Failed to apply color.", life: 3000 });
-      else
-        toast.add({ severity: "success", summary: "Success", detail: "Color applied.", life: 3000 });
-    }
-
-    queryClient.invalidateQueries({ queryKey: ["screens"] });
-  }
-});
-
-const isButtonApplyDisabled = computed(() => isApplying.value || isSaving.value || isDeleting.value);
-
-const onApplyClick = () => {
-
-  if(isButtonApplyDisabled.value == true) return;
-
-  apply(configurationFromForm.value);
-};
 
 const { mutate: save, isSuccess: succeededSave, isError: failedSave, isPending: isSaving } = useMutation({
   mutationFn: saveConfiguration,
@@ -218,7 +171,6 @@ watch(failedSave, () => {
 });
 
 const isButtonSaveDisabled = computed(() => 
-  isApplying.value == true ||
   isSaving.value == true || 
   isDeleting.value == true ||
   isNullOrWhitespace(form.value.name) == true || 
@@ -252,7 +204,6 @@ watch(failedDelete, () => {
 });
 
 const isButtonDeleteDisabled = computed(() => 
-  isApplying.value == true ||
   isSaving.value == true ||
   isDeleting.value == true
 );
@@ -268,6 +219,96 @@ const onDeleteClick = (e: MouseEvent) => {
 const onDeleteSecondClick = () => {
   deletePopover.value!.hide();
   deleteConf(configurationFromForm.value);
+};
+
+const { connection, on } = useSignalR();
+
+
+const receivedLastApplyBrightnessResult = ref(true);
+
+const applyBrightness = async (value: number) => {
+
+  if(receivedLastApplyBrightnessResult.value == false) return;
+
+  receivedLastApplyBrightnessResult.value = false;
+
+  connection.value.invoke("ApplyBrightness", value, selectedScreen.value?.id);
+};
+
+on("ApplyBrightnessResult", (result: boolean) => { 
+
+  receivedLastApplyBrightnessResult.value = true;
+
+  if(result == false)
+  {
+    //console.log("ERROR");
+  }
+});
+
+
+const receivedLastApplyTemperatureResult = ref(true);
+const showInvalidTemperature = ref(false);
+
+const applyTemperature = async (value: number) => {
+
+  if(receivedLastApplyTemperatureResult.value == false) return;
+
+  receivedLastApplyTemperatureResult.value = false;
+
+  connection.value.invoke("ApplyTemperature", value, selectedScreen.value?.id);
+};
+
+on("ApplyTemperatureResult", (result: boolean) => { 
+
+  receivedLastApplyTemperatureResult.value = true;
+
+  if(result == false)
+  {
+    showInvalidTemperature.value = true;
+  }
+  else
+  {
+    showInvalidTemperature.value = false;
+  }
+});
+
+
+const receivedLastApplyColorResult = ref(true);
+
+const applyColor = async (value: string) => {
+
+  if(receivedLastApplyColorResult.value == false) return;
+
+  receivedLastApplyColorResult.value = false;
+
+  connection.value.invoke("ApplyColor", value, selectedScreen.value?.id);
+};
+
+on("ApplyColorResult", (result: boolean) => { 
+
+  receivedLastApplyColorResult.value = true;
+
+  if(result == false)
+  {
+    //console.log("ERROR");
+  }
+});
+
+
+const isButtonApplyDisabled = computed(() => isSaving.value || isDeleting.value);
+
+const onApplyClick = () => {
+
+  if(isButtonApplyDisabled.value == true) return;
+
+  if(form.value.isBrightnessChecked)
+    applyBrightness(form.value.brightness!);
+
+  if(form.value.type == ConfigurationDiscriminator.TemperatureConfiguration && form.value.isTemperatureChecked)
+    applyTemperature(form.value.temperature!);
+
+  if(form.value.type == ConfigurationDiscriminator.ColorConfiguration && form.value.isColorChecked)
+    applyColor(form.value.color!);
 };
 
 </script>
@@ -326,6 +367,7 @@ const onDeleteSecondClick = () => {
           <div class="flex gap-2 items-center">
             <Slider
               v-model="form.temperature"
+              @update:model-value="(e : number | number[]) => applyTemperature(e as number)"
               :min="2000"
               :max="6600"
               :disabled="!form.isTemperatureChecked"
@@ -335,6 +377,12 @@ const onDeleteSecondClick = () => {
               {{ form.temperature }} K
             </p>
           </div>
+          <p
+            v-if="showInvalidTemperature"
+            class="text-red-500"
+          >
+            This value is not supported.
+          </p>
         </div>
       </template>
       <template v-else-if="form.type == ConfigurationDiscriminator.ColorConfiguration">
@@ -349,6 +397,7 @@ const onDeleteSecondClick = () => {
           </div>
           <ColorPicker
             v-model="form.color"
+            @update:model-value="(e : string) => applyColor(`#${e ?? 'FFFFFF'}`)"
             :disabled="!form.isColorChecked"
           />
         </div>
@@ -367,6 +416,7 @@ const onDeleteSecondClick = () => {
         <div class="flex gap-2 items-center">
           <Slider
             v-model="form.brightness"
+            @update:model-value="(e : number | number[]) => applyBrightness(e as number)"
             :disabled="!isBrightnessSupported || !form.isBrightnessChecked"
             class="flex-1 m-3"
           />
@@ -409,7 +459,6 @@ const onDeleteSecondClick = () => {
           severity="secondary"
           label="Apply"
           @click="onApplyClick"
-          :loading="isApplying"
           :disabled="isButtonApplyDisabled"
         />
       </div>

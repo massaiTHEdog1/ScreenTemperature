@@ -1,6 +1,17 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.InteropServices;
 
 namespace ScreenTemperature.Entities;
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+public struct PHYSICAL_MONITOR
+{
+    public IntPtr hPhysicalMonitor;
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+    public string szPhysicalMonitorDescription;
+}
+
 
 /// <summary>
 /// Represents a screen attached to this machine.
@@ -47,7 +58,9 @@ public class Screen
 
     public bool IsBrightnessSupported { get; set; }
 
-    public int MaxBrightness { get; set; }
-    public int MinBrightness { get; set; }
-    public int CurrentBrightness { get; set; }
+    public uint MaxBrightness { get; set; }
+    public uint MinBrightness { get; set; }
+    public uint CurrentBrightness { get; set; }
+
+    public PHYSICAL_MONITOR[] PhysicalMonitors { get; set; }
 }

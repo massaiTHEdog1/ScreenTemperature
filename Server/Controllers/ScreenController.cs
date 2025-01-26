@@ -2,10 +2,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using ScreenTemperature.DTOs;
+using ScreenTemperature.Mappers;
 using ScreenTemperature.Services;
 
 [AllowAnonymous]
-public class ScreenController : Controller
+public class ScreenController
 {
     private readonly IScreenService _screenService;
 
@@ -15,12 +16,10 @@ public class ScreenController : Controller
     }
 
     [HttpGet("/api/screens")]
-    public async Task<Results<Ok<IList<ScreenDto>>, BadRequest<APIErrorResponseDto>>> GetAllScreensAsync()
+    public async Task<IResult> GetAllScreensAsync()
     {
-        var getScreensResult = _screenService.GetScreens();
+        var screens = await _screenService.GetScreensAsync();
 
-        if (!getScreensResult.Success) return TypedResults.BadRequest(new APIErrorResponseDto(getScreensResult.Errors));
-
-        return TypedResults.Ok(getScreensResult.Data);
+        return TypedResults.Ok(screens.Select(x => x.ToDto()));
     }
 }
