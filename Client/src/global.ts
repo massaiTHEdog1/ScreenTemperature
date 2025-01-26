@@ -1,4 +1,3 @@
-import { ConfigurationApplyResultDto } from "./dtos/configurations/configurationApplyResultDto";
 import { ConfigurationDto } from "./dtos/configurations/configurationDto";
 import { ScreenDto } from "./dtos/screenDto";
 
@@ -22,21 +21,6 @@ export const getScreens = async () : Promise<ScreenDto[]> => {
 
 export const getConfigurations = async () : Promise<ConfigurationDto[]> => {
   const response = await fetch(`${import.meta.env.VITE_SERVER_BASE_URL}/api/configurations`);
-
-  if(response.status == 200)
-    return await response.json();
-
-  throw Error();
-};
-
-export const applyConfiguration = async (configuration: ConfigurationDto) : Promise<ConfigurationApplyResultDto> => {
-  const response = await fetch(`${import.meta.env.VITE_SERVER_BASE_URL}/api/configurations/apply`, { 
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(configuration)
-  });
 
   if(response.status == 200)
     return await response.json();
