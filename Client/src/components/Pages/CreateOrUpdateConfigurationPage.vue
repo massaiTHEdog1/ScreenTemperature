@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { useScreens } from '@/composables/useScreens';
 import { ColorConfigurationDto } from '@/dtos/configurations/colorConfigurationDto';
-import { isColorConfigurationApplyResult, isTemperatureConfigurationApplyResult } from '@/dtos/configurations/configurationApplyResultDto';
 import { ConfigurationDiscriminator, ConfigurationDto } from '@/dtos/configurations/configurationDto';
 import { TemperatureConfigurationDto } from '@/dtos/configurations/temperatureConfigurationDto';
-import { Routes, applyConfiguration, deleteConfiguration, getConfigurations, isNullOrWhitespace, saveConfiguration } from '@/global';
+import { Routes, deleteConfiguration, getConfigurations, isNullOrWhitespace, saveConfiguration } from '@/global';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { useToast } from 'primevue/usetoast';
 import Button from 'primevue/button';
@@ -13,7 +12,7 @@ import ColorPicker from 'primevue/colorpicker';
 import InputText from 'primevue/inputtext';
 import SelectButton from 'primevue/selectbutton';
 import Slider from 'primevue/slider';
-import { computed, onUnmounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { v4 as uuidv4 } from 'uuid';
 import DeletePopover from '../DeletePopover.vue';
@@ -26,6 +25,9 @@ const props = defineProps({
     default: undefined
   },
 });
+
+const router = useRouter();
+const toast = useToast();
 
 interface Form {
   type?: ConfigurationDiscriminator,
@@ -53,7 +55,7 @@ const initialForm = ref<Form>({ ...form.value });
 
 const shouldLoadConfigurations = computed(() => props.id != undefined);
 
-const { data: configurations } = useQuery({
+const { data: configurations, isFetched } = useQuery({
   queryKey: ['configurations'],
   queryFn: getConfigurations,
   staleTime: Infinity,
@@ -67,6 +69,11 @@ const selectedScreen = computed(() => screens.value.find(x => x.id == selectedSc
 const isBrightnessSupported = computed(() => selectedScreen.value?.isBrightnessSupported == true);
 
 const configuration = computed(() => configurations.value?.find(x => x.id == props.id));
+
+watch([isFetched, props], () => {
+  if(props.id != undefined && isFetched.value == true && configuration.value == undefined)// if this configuration doesn't exists
+    router.push({ name: Routes.CONFIGURATIONS });
+}, { immediate: true });
 
 const reinitializeForm = () => {
   form.value.type = configuration.value?.$type ?? ConfigurationDiscriminator.TemperatureConfiguration;
@@ -143,10 +150,6 @@ const configurationFromForm = computed<ConfigurationDto>(() => {
 
   return dto;
 });
-
-const router = useRouter();
-
-const toast = useToast();
 
 const { mutate: save, isSuccess: succeededSave, isError: failedSave, isPending: isSaving } = useMutation({
   mutationFn: saveConfiguration,
