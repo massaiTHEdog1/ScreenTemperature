@@ -11,6 +11,7 @@ namespace ScreenTemperature.Mappers
             return new KeyBindingDto()
             {
                 Id = entity.Id,
+                Name = entity.Name,
                 Commands = entity.Commands?.Select(x => x.ToDto()) ?? new List<CommandDto>(){},
                 Alt = entity.Alt,
                 Control = entity.Control,

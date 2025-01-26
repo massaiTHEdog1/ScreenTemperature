@@ -18,7 +18,7 @@ const items : {
   {
     icon: "fa-regular fa-keyboard",
     label: "Key bindings",
-    to: { name: Routes.BINDINGS }
+    to: { name: Routes.KEY_BINDINGS }
   },
   {
     icon: "fa-solid fa-gear",

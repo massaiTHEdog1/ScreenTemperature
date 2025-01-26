@@ -3,6 +3,8 @@ import { Routes } from "@/global";
 import CategorySelectionPage from "./components/Pages/CategorySelectionPage.vue";
 import ConfigurationsPage from "./components/Pages/ConfigurationsPage.vue";
 import CreateOrUpdateConfigurationPage from "./components/Pages/CreateOrUpdateConfigurationPage.vue";
+import KeyBindingsPage from "./components/Pages/KeyBindingsPage.vue";
+import CreateOrUpdateKeyBindingPage from "./components/Pages/CreateOrUpdateKeyBindingPage.vue";
 
 const routes: RouteRecordRaw[] = [
   { 
@@ -24,6 +26,24 @@ const routes: RouteRecordRaw[] = [
             name: Routes.CONFIGURATIONS_UPDATE,
             path: ":id",
             component: CreateOrUpdateConfigurationPage,
+            props: route => ({ id: route.params.id })
+          }
+        ]
+      },
+      { 
+        name: Routes.KEY_BINDINGS,
+        path: "bindings", 
+        component: KeyBindingsPage,
+        children: [
+          {
+            name: Routes.KEY_BINDING_CREATE,
+            path: "create",
+            component: CreateOrUpdateKeyBindingPage
+          },
+          {
+            name: Routes.KEY_BINDING_UPDATE,
+            path: ":id",
+            component: CreateOrUpdateKeyBindingPage,
             props: route => ({ id: route.params.id })
           }
         ]

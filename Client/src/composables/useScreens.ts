@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { getScreens } from "@/global";
-import { useQuery } from "@tanstack/vue-query";
+import { useQuery, UseQueryOptions } from "@tanstack/vue-query";
+import { ScreenDto } from "@/dtos/screenDto";
 
 export interface Screen {
   index: number;
@@ -27,13 +28,14 @@ export interface Screen {
 
 const selectedScreens = ref<string[]>([]);
 
-export const useScreens = () => {
+export const useScreens = (options?: Partial<UseQueryOptions<ScreenDto[], Error, ScreenDto[], ScreenDto[], string[]>>) => {
 
-  const { data: screenDtos, isFetching, isError } = useQuery({
+  const query = useQuery({
     queryKey: ['screens'],
     queryFn: getScreens,
     staleTime: Infinity,
     refetchOnMount: false,
+    ...options
   });
 
   const aspectRatio = ref<string>("");
@@ -48,7 +50,7 @@ export const useScreens = () => {
     let maximumX = 0;
     let maximumY = 0;
 
-    for (const screen of (screenDtos.value ?? [])) {
+    for (const screen of (query.data.value ?? [])) {
       if (screen.x < rectangleLeftBorderPosition) rectangleLeftBorderPosition = screen.x;
       if (screen.x + screen.width > rectangleRightBorderPosition) rectangleRightBorderPosition = screen.x + screen.width;
       if (screen.y < rectangleTopBorderPosition) rectangleTopBorderPosition = screen.y;
@@ -62,7 +64,7 @@ export const useScreens = () => {
 
     aspectRatio.value = `${rectangleWidth} / ${rectangleHeight}`;
       
-    return screenDtos.value?.map((x, index) => ({
+    return query.data.value?.map((x, index) => ({
       index: index + 1,
       id: x.devicePath,
       label: x.label,
@@ -82,5 +84,5 @@ export const useScreens = () => {
     } satisfies Screen)) ?? []; 
   });
 
-  return { selectedScreens, screens, aspectRatio, isFetching, isError };
+  return { selectedScreens, screens, aspectRatio, ...query };
 };

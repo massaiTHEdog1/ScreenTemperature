@@ -20,6 +20,8 @@ public class KeyBinding
     /// </summary>
     public List<Command> Commands { get; set; }
 
+    public string Name { get; set; }
+
     /// <summary>
     /// Return the key that executes the <see cref="Commands"/>.
     /// </summary>

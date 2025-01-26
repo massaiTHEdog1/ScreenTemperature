@@ -29,7 +29,11 @@ const props = defineProps({
 const router = useRouter();
 const toast = useToast();
 
+const { selectedScreens, screens } = useScreens();
+const selectedScreen = computed(() => screens.value.find(x => x.id == selectedScreens.value[0]));
+
 interface Form {
+  screen?: string,
   type?: ConfigurationDiscriminator,
   name?: string,
   isBrightnessChecked?: boolean,
@@ -41,6 +45,7 @@ interface Form {
 }
 
 const form = ref<Form>({
+  screen: selectedScreen.value?.id,
   type: ConfigurationDiscriminator.TemperatureConfiguration,
   name: "",
   isBrightnessChecked: false,
@@ -53,54 +58,51 @@ const form = ref<Form>({
 
 const initialForm = ref<Form>({ ...form.value });
 
-const shouldLoadConfigurations = computed(() => props.id != undefined);
+const isUpdateMode = computed(() => props.id != undefined);
 
-const { data: configurations, isFetched } = useQuery({
+const { data: configurations, isFetching: isFetchingConfigurations } = useQuery({
   queryKey: ['configurations'],
   queryFn: getConfigurations,
   staleTime: Infinity,
   refetchOnMount: false,
-  enabled: shouldLoadConfigurations
+  enabled: isUpdateMode
 });
-
-const { selectedScreens, screens } = useScreens();
-const selectedScreen = computed(() => screens.value.find(x => x.id == selectedScreens.value[0]));
 
 const isBrightnessSupported = computed(() => selectedScreen.value?.isBrightnessSupported == true);
 
-const configuration = computed(() => configurations.value?.find(x => x.id == props.id));
+const configurationToUpdate = computed(() => configurations.value?.find(x => x.id == props.id));
+const screenAssociatedToConfigurationToUpdate = computed(() => screens.value?.find(x => x.id == configurationToUpdate.value?.devicePath));
 
-watch([isFetched, props], () => {
-  if(props.id != undefined && isFetched.value == true && configuration.value == undefined)// if this configuration doesn't exists
+watch([isFetchingConfigurations], () => {
+  if(isUpdateMode.value == true && isFetchingConfigurations.value == false && configurationToUpdate.value == undefined)// if this configuration doesn't exists
+  {
+    toast.add({ severity: "error", summary: "Failed", detail: "Configuration not found.", life: 3000 });
     router.push({ name: Routes.CONFIGURATIONS });
+  }
 }, { immediate: true });
 
-const reinitializeForm = () => {
-  form.value.type = configuration.value?.$type ?? ConfigurationDiscriminator.TemperatureConfiguration;
-  form.value.name = configuration.value?.name ?? "";
-  form.value.isBrightnessChecked = configuration.value?.applyBrightness ?? selectedScreen.value?.isBrightnessSupported ?? false;
-  form.value.brightness = configuration.value?.brightness ?? 100;
-  form.value.isTemperatureChecked = (configuration.value as TemperatureConfigurationDto)?.applyIntensity ?? true;
-  form.value.temperature = (configuration.value as TemperatureConfigurationDto)?.intensity ?? 6600;
-  form.value.isColorChecked = (configuration.value as ColorConfigurationDto)?.applyColor ?? false;
-  form.value.color = (configuration.value as ColorConfigurationDto)?.color ?? "FFFFFF";
+watch([selectedScreen], () => {
+  form.value.screen = selectedScreen.value?.id;
+});
+
+watch([configurationToUpdate, screens], () => {
+
+  if(screenAssociatedToConfigurationToUpdate.value != undefined)
+  {
+    selectedScreens.value = [screenAssociatedToConfigurationToUpdate.value.id];
+  }
+
+  form.value.screen = configurationToUpdate.value?.devicePath ?? selectedScreen.value?.id;
+  form.value.type = configurationToUpdate.value?.$type ?? ConfigurationDiscriminator.TemperatureConfiguration;
+  form.value.name = configurationToUpdate.value?.name ?? "";
+  form.value.isBrightnessChecked = configurationToUpdate.value?.applyBrightness ?? selectedScreen.value?.isBrightnessSupported ?? false;
+  form.value.brightness = configurationToUpdate.value?.brightness ?? 100;
+  form.value.isTemperatureChecked = (configurationToUpdate.value as TemperatureConfigurationDto)?.applyIntensity ?? true;
+  form.value.temperature = (configurationToUpdate.value as TemperatureConfigurationDto)?.intensity ?? 6600;
+  form.value.isColorChecked = (configurationToUpdate.value as ColorConfigurationDto)?.applyColor ?? false;
+  form.value.color = (configurationToUpdate.value as ColorConfigurationDto)?.color ?? "FFFFFF";
 
   initialForm.value = { ...form.value };
-};
-
-watch([configuration], () => {
-  reinitializeForm();
-}, { immediate: true });
-
-watch(screens, () => {
-  const screenToSelect = screens.value?.find(x => x.id == configuration.value?.devicePath);
-
-  if(screenToSelect != undefined)
-  {
-    selectedScreens.value = [screenToSelect.id];
-
-    reinitializeForm();
-  }
 }, { immediate: true });
 
 const typeOptions : { label: string, value: ConfigurationDiscriminator }[] = [
@@ -121,8 +123,8 @@ const configurationFromForm = computed<ConfigurationDto>(() => {
   {
     dto = {
       $type: ConfigurationDiscriminator.TemperatureConfiguration,
-      id: configuration.value?.id ?? uuidv4(),
-      devicePath: selectedScreen.value?.id ?? "",
+      id: configurationToUpdate.value?.id ?? uuidv4(),
+      devicePath: form.value?.screen ?? "",
       name: form.value.name ?? "",
       applyBrightness: form.value.isBrightnessChecked ?? false,
       brightness: form.value.brightness ?? 0,
@@ -134,8 +136,8 @@ const configurationFromForm = computed<ConfigurationDto>(() => {
   {
     dto = {
       $type: ConfigurationDiscriminator.ColorConfiguration,
-      id: configuration.value?.id ?? uuidv4(),
-      devicePath: selectedScreen.value?.id ?? "",
+      id: configurationToUpdate.value?.id ?? uuidv4(),
+      devicePath: form.value?.screen ?? "",
       name: form.value.name ?? "",
       applyBrightness: form.value.isBrightnessChecked ?? false,
       brightness: form.value.brightness ?? 0,
@@ -441,7 +443,7 @@ const onApplyClick = () => {
         />
 
         <Button
-          v-if="configuration != undefined"
+          v-if="configurationToUpdate != undefined"
           class="w-fit"
           severity="danger"
           icon="pi pi-trash"
