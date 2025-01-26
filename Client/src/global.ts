@@ -3,11 +3,11 @@ import { ConfigurationDto } from "./dtos/configurations/configurationDto";
 import { ScreenDto } from "./dtos/screenDto";
 
 export enum Routes {
-  CATEGORY_SELECTION = "home",
-  CONFIGURATIONS = "configuration",
-  CONFIGURATIONS_CREATE = "configuration_create",
-  BINDINGS = "bindings",
-  PARAMETERS = "parameters",
+  CATEGORY_SELECTION = "CATEGORY_SELECTION",
+  CONFIGURATIONS = "CONFIGURATIONS",
+  CONFIGURATIONS_CREATE = "CONFIGURATIONS_CREATE",
+  BINDINGS = "BINDINGS",
+  PARAMETERS = "PARAMETERS",
   CONFIGURATIONS_UPDATE = "CONFIGURATIONS_UPDATE",
 }
 

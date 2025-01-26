@@ -1,25 +1,16 @@
 <script setup lang="ts">
 import ScreensViewer from '@/components/ScreensViewer.vue';
-import { Routes } from "@/global";
-import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import ProgressSpinner from 'primevue/progressspinner';
 import { useScreens } from '@/composables/useScreens';
 import Toast from 'primevue/toast';
+import { ref } from 'vue';
 
 const route = useRoute();
 
-const { selectedScreens, screens, isFetching: isFetchingScreens, isError: failedFetchingScreens } = useScreens();
+const { isFetching: isFetchingScreens, isError: failedFetchingScreens } = useScreens();
 
-const currentPageLevel = computed(() => {
-  if(route.name == Routes.CONFIGURATIONS || route.name == Routes.BINDINGS) return 1;
-  if(route.name == Routes.CONFIGURATIONS_CREATE || route.name == Routes.CONFIGURATIONS_UPDATE) return 2;
-  return 0;
-});
-
-const marginLeft = computed(() => {
-  return `-${currentPageLevel.value * 100}%`;
-});
+const transitionTime = ref(150);
 
 </script>
 
@@ -35,40 +26,32 @@ const marginLeft = computed(() => {
       </ScreensViewer>
     </div>
     
-    <div class="overflow-x-hidden h-full w-full">
+    <div
+      class="wrapper overflow-x-hidden h-full w-full relative"
+      style="container-type: inline-size;"
+    >
       <div
-        class="h-full w-[300%] flex flex-row transition-all"
-        :style="{ marginLeft: marginLeft }"
+        class="big-block h-full flex flex-row transition-[left] absolute"
+        :style="{ 
+          left: `${(route.matched.length - 1) * -100}%`, 
+          width: `${(route.matched.length + 1) * 100}%`,
+          transitionDuration: `${transitionTime}ms`
+        }"
       >
-        <div class="h-full w-full">
-          <div class="content w-full h-full mx-auto">
-            <component
-              :is="route.matched.find(x => x.name == Routes.CATEGORY_SELECTION)?.components?.default"
-              v-if="route.matched.some(x => x.name == Routes.CATEGORY_SELECTION)"
-            />
+        <transition-group :duration="transitionTime">
+          <div 
+            class="slide h-full w-[100cqw]"
+            v-for="matched in route.matched"
+            :key="matched.name"
+          >
+            <div class=" w-full h-full mx-auto max-w-[850px]">
+              <component
+                :is="matched.components?.default"
+                v-bind="typeof matched.props.default === 'function' ? matched.props.default(route) : undefined"
+              />
+            </div>
           </div>
-        </div>
-        <div class="h-full w-full">
-          <div class="content w-full h-full mx-auto">
-            <component
-              :is="route.matched.find(x => x.name == Routes.CONFIGURATIONS)?.components?.default"
-              v-if="route.matched.some(x => x.name == Routes.CONFIGURATIONS)"
-            />
-          </div>
-        </div>
-        <div class="h-full w-full">
-          <div class="content w-full h-full mx-auto">
-            <component
-              :is="route.matched.find(x => x.name == Routes.CONFIGURATIONS_CREATE)?.components?.default"
-              v-if="route.matched.some(x => x.name == Routes.CONFIGURATIONS_CREATE)"
-            />
-            <component
-              :is="route.matched.find(x => x.name == Routes.CONFIGURATIONS_UPDATE)?.components?.default"
-              v-bind="(route.matched.find(x => x.name == Routes.CONFIGURATIONS_UPDATE)?.props as any).default(route)"
-              v-if="route.matched.some(x => x.name == Routes.CONFIGURATIONS_UPDATE)"
-            />
-          </div>
-        </div>
+        </transition-group>
       </div>
     </div>
   </div>
@@ -77,8 +60,5 @@ const marginLeft = computed(() => {
 
 <style scoped>
 
-.content {
-  max-width: 850px;
-}
 
 </style>
