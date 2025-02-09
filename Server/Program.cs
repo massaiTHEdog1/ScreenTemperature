@@ -33,6 +33,7 @@ internal class Program
         }
 
         builder.Services.AddSignalR();
+        builder.Services.AddSingleton<HotKeyManager>();
 
         #endregion
 
@@ -57,6 +58,10 @@ internal class Program
             {
                 var databaseContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
                 databaseContext.Database.Migrate();
+
+                var hotKeyManager = scope.ServiceProvider.GetRequiredService<HotKeyManager>();
+
+                _ = hotKeyManager.InitAsync();
             }
             catch (Exception ex)
             {
@@ -64,8 +69,6 @@ internal class Program
                 logger.LogError(ex, "An error occurred creating the DB.");
             }
         }
-
-        HotKeyManager.Init(app);
 
         Task.Run(async () =>
         {

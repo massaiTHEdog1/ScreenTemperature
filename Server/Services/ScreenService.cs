@@ -17,15 +17,8 @@ public interface IScreenService
     Task<bool> ApplyBrightnessToScreenAsync(int brightness, string devicePath);
 }
 
-public class ScreenService : IScreenService
+public class ScreenService(ILogger<ScreenService> logger) : IScreenService
 {
-    private readonly ILogger<ScreenService> _logger;
-
-    public ScreenService(ILogger<ScreenService> logger)
-    {
-        _logger = logger;
-    }
-
     [DllImport("gdi32.dll")]
     private static extern bool SetDeviceGammaRamp(int hdc, IntPtr ramp);
 

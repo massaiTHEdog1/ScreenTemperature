@@ -12,4 +12,6 @@ public abstract class Configuration
 
     public bool ApplyBrightness { get; set; }
     public byte Brightness { get; set; }
+
+    public List<KeyBinding> KeyBindings { get; set; } = [];
 }

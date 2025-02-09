@@ -30,17 +30,17 @@ defineEmits<{
       <p>Are you sure you want to delete ?</p>
       <div class="flex gap-2 justify-end">
         <Button
-          severity="secondary"
-          icon="pi pi-times"
-          label="Cancel"
-          @click="$emit('onCancelClick')"
-        />
-
-        <Button
           severity="danger"
           icon="pi pi-trash"
           label="Delete"
           @click="$emit('onDeleteClick')"
+        />
+        
+        <Button
+          severity="secondary"
+          icon="pi pi-times"
+          label="Cancel"
+          @click="$emit('onCancelClick')"
         />
       </div>
     </div>

@@ -1,5 +1,5 @@
 
-using ScreenTemperature.Entities.Commands;
+using ScreenTemperature.Entities.Configurations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ScreenTemperature.Entities;
@@ -16,14 +16,14 @@ public class KeyBinding
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Returns the commands associated to this binding.
+    /// Returns the configurations associated to this binding.
     /// </summary>
-    public List<Command> Commands { get; set; }
+    public List<Configuration> Configurations { get; set; } = [];
 
     public string Name { get; set; }
 
     /// <summary>
-    /// Return the key that executes the <see cref="Commands"/>.
+    /// Return the key that executes the <see cref="Configurations"/>.
     /// </summary>
     public int KeyCode { get; set; }
 
@@ -31,11 +31,6 @@ public class KeyBinding
     /// Returns whether the Alt key should be pressed.
     /// </summary>
     public bool Alt { get; set; }
-
-    /// <summary>
-    /// Returns whether the Shift key should be pressed.
-    /// </summary>
-    public bool Shift { get; set; }
 
     /// <summary>
     /// Returns whether the Ctrl should be pressed.

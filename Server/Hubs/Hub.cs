@@ -3,22 +3,15 @@ using ScreenTemperature.Services;
 
 namespace ScreenTemperature.Hubs;
 
-public class Hub : Microsoft.AspNetCore.SignalR.Hub
+public class Hub(IScreenService screenService) : Microsoft.AspNetCore.SignalR.Hub
 {
-    public readonly IScreenService _screenService;
-
-    public Hub(IScreenService screenService)
-    {
-        _screenService = screenService;
-    }
-
     public async Task ApplyBrightness(int brightness, string devicePath)
     {
         var result = false;
 
         try
         {
-            result = await _screenService.ApplyBrightnessToScreenAsync(brightness, devicePath);
+            result = await screenService.ApplyBrightnessToScreenAsync(brightness, devicePath);
         }
         catch (Exception ex) { }
         
@@ -31,7 +24,7 @@ public class Hub : Microsoft.AspNetCore.SignalR.Hub
 
         try
         {
-            result = await _screenService.ApplyKelvinToScreenAsync(temperature, devicePath);
+            result = await screenService.ApplyKelvinToScreenAsync(temperature, devicePath);
         }
         catch (Exception ex) { }
 
@@ -44,7 +37,7 @@ public class Hub : Microsoft.AspNetCore.SignalR.Hub
 
         try
         {
-            result = await _screenService.ApplyColorToScreenAsync(color, devicePath);
+            result = await screenService.ApplyColorToScreenAsync(color, devicePath);
         }
         catch (Exception ex) { }
 

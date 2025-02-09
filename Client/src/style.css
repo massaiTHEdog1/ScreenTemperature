@@ -25,3 +25,7 @@ html {
   font-size: 14px;
   line-height: normal;
 }
+
+.p-dialog {
+  @apply !bg-slate-700 !border-0 !text-white;
+}

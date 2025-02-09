@@ -11,25 +11,12 @@ using ScreenTemperature.Services;
 using System.ComponentModel.DataAnnotations;
 
 [AllowAnonymous]
-public class ConfigurationController
+public class ConfigurationController(ILogger<ConfigurationController> logger, DatabaseContext databaseContext, IScreenService screenService)
 {
-    private readonly ILogger<ConfigurationController> _logger;
-    private readonly DatabaseContext _databaseContext;
-    private readonly IScreenService _screenService;
-
-    public ConfigurationController(ILogger<ConfigurationController> logger, DatabaseContext databaseContext, IScreenService screenService)
-    {
-        _logger = logger;
-        _databaseContext = databaseContext;
-        _screenService = screenService;
-    }
-
-
-
     [HttpGet("/api/configurations")]
     public async Task<IResult> GetAllAsync()
     {
-        var entities = await _databaseContext.Configurations.ToListAsync();
+        var entities = await databaseContext.Configurations.ToListAsync();
 
         return TypedResults.Ok(entities.Select(x => x.ToDto()));
     }
@@ -43,7 +30,7 @@ public class ConfigurationController
 
         // todo : Add dto validation
 
-        var entity = await _databaseContext.Configurations.FirstOrDefaultAsync(x => x.Id == dto.Id);
+        var entity = await databaseContext.Configurations.FirstOrDefaultAsync(x => x.Id == dto.Id);
 
         if (entity == null)
         {
@@ -54,7 +41,7 @@ public class ConfigurationController
             else
                 throw new NotImplementedException();
 
-            _databaseContext.Configurations.Add(entity);
+            databaseContext.Configurations.Add(entity);
         }
 
         entity.Name = dto.Name;
@@ -77,7 +64,7 @@ public class ConfigurationController
             return TypedResults.BadRequest(new APIErrorResponseDto([$"Type of configuration {dto.Id} is invalid."]));
         }
 
-        await _databaseContext.SaveChangesAsync();
+        await databaseContext.SaveChangesAsync();
 
         return TypedResults.Ok(entity.ToDto());
     }
@@ -87,13 +74,13 @@ public class ConfigurationController
     [HttpDelete("/api/configurations/{id:guid}")]
     public async Task<IResult> DeleteAsync([Required] Guid id)
     {
-        var entity = await _databaseContext.Configurations.SingleOrDefaultAsync(x => x.Id == id);
+        var entity = await databaseContext.Configurations.SingleOrDefaultAsync(x => x.Id == id);
 
         if (entity == null) return TypedResults.BadRequest(new APIErrorResponseDto(["This configuration does not exist."]));
 
-        _databaseContext.Configurations.Remove(entity);
+        databaseContext.Configurations.Remove(entity);
 
-        await _databaseContext.SaveChangesAsync();
+        await databaseContext.SaveChangesAsync();
 
         return TypedResults.Ok();
     }

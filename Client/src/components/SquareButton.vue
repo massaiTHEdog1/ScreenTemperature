@@ -17,7 +17,7 @@ defineProps({
 
 <template>
   <div
-    class="w-full h-full bg-slate-700 rounded-lg cursor-pointer hover:border flex flex-col gap-2 items-center justify-center"
+    class="w-full h-full bg-slate-700 rounded-lg cursor-pointer hover:border flex flex-col gap-2 items-center justify-center text-center"
     tabindex="0"
   >
     <i

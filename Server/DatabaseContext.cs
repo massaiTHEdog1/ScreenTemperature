@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using ScreenTemperature.Entities;
-using ScreenTemperature.Entities.Commands;
 using ScreenTemperature.Entities.Configurations;
 using Path = System.IO.Path;
 
@@ -9,12 +8,6 @@ namespace ScreenTemperature;
 public class DatabaseContext : DbContext
 {
     private readonly IWebHostEnvironment _webHostEnvironment;
-
-    public DbSet<Command> Commands { get; set; }
-    public DbSet<ApplyConfigurationCommand> ApplyConfigurationCommands { get; set; }
-    //public DbSet<DecreaseBrightnessBy> DecreaseBrightnessByCommands { get; set; }
-    //public DbSet<IncreaseBrightnessBy> IncreaseBrightnessByCommands { get; set; }
-    //public DbSet<SetBrightnessTo> SetBrightnessToCommands { get; set; }
 
     public DbSet<KeyBinding> KeyBindings { get; set; }
 
@@ -71,7 +64,6 @@ public class DatabaseContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Command>().UseTptMappingStrategy(); // for polymorphism
         modelBuilder.Entity<Configuration>().UseTptMappingStrategy(); // for polymorphism
     }
 }

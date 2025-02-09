@@ -18,15 +18,9 @@ public interface IOptionsService
     bool SetStartAppOnUserLogin(bool startAppOnUserLogin);
 }
 
-public class OptionsService : IOptionsService
+public class OptionsService(ILogger<OptionsService> logger) : IOptionsService
 {
-    private readonly ILogger<OptionsService> _logger;
     private const string _runKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-
-    public OptionsService(ILogger<OptionsService> logger)
-    {
-        _logger = logger;
-    }
 
     /// <summary>
     /// Get the options

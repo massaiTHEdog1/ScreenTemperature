@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ScreenTemperature;
 
@@ -10,27 +11,14 @@ using ScreenTemperature;
 namespace ScreenTemperature.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250209150504_remove-commands")]
+    partial class removecommands
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
-
-            modelBuilder.Entity("ConfigurationKeyBinding", b =>
-                {
-                    b.Property<Guid>("ConfigurationsId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("KeyBindingsId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("ConfigurationsId", "KeyBindingsId");
-
-                    b.HasIndex("KeyBindingsId");
-
-                    b.ToTable("ConfigurationKeyBinding");
-                });
 
             modelBuilder.Entity("ScreenTemperature.Entities.Configurations.Configuration", b =>
                 {
@@ -66,6 +54,9 @@ namespace ScreenTemperature.Migrations
                     b.Property<bool>("Alt")
                         .HasColumnType("INTEGER");
 
+                    b.Property<Guid>("ConfigurationId")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("Control")
                         .HasColumnType("INTEGER");
 
@@ -77,6 +68,8 @@ namespace ScreenTemperature.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ConfigurationId");
 
                     b.ToTable("KeyBindings");
                 });
@@ -108,19 +101,15 @@ namespace ScreenTemperature.Migrations
                     b.ToTable("TemperatureConfigurations");
                 });
 
-            modelBuilder.Entity("ConfigurationKeyBinding", b =>
+            modelBuilder.Entity("ScreenTemperature.Entities.KeyBinding", b =>
                 {
-                    b.HasOne("ScreenTemperature.Entities.Configurations.Configuration", null)
+                    b.HasOne("ScreenTemperature.Entities.Configurations.Configuration", "Configuration")
                         .WithMany()
-                        .HasForeignKey("ConfigurationsId")
+                        .HasForeignKey("ConfigurationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ScreenTemperature.Entities.KeyBinding", null)
-                        .WithMany()
-                        .HasForeignKey("KeyBindingsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Configuration");
                 });
 
             modelBuilder.Entity("ScreenTemperature.Entities.Configurations.ColorConfiguration", b =>

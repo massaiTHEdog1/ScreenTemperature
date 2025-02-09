@@ -2,32 +2,22 @@
 
 namespace ScreenTemperature.Middlewares;
 
-public class ExceptionMiddleware
+public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IWebHostEnvironment webHostEnvironment)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ExceptionMiddleware> _logger;
-    private readonly IWebHostEnvironment _webHostEnvironment;
-
-    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IWebHostEnvironment webHostEnvironment)
-    {
-        _next = next;
-        _logger = logger;
-        _webHostEnvironment = webHostEnvironment;
-    }
 
     public async Task Invoke(HttpContext context)
     {
         try
         {
-            await _next.Invoke(context);
+            await next.Invoke(context);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
+            logger.LogError(ex, ex.Message);
 
             context.Response.StatusCode = 500;
 
-            if(_webHostEnvironment.IsDevelopment())
+            if(webHostEnvironment.IsDevelopment())
             {
                 await context.Response.WriteAsJsonAsync(new { message = ex.Message });
             }

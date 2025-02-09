@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { deleteKeyBinding, getKeyBindings, isNullOrWhitespace, Routes, saveKeyBinding } from '@/global';
+import { deleteKeyBinding, getConfigurations, getKeyBindings, isNullOrWhitespace, Routes, saveKeyBinding } from '@/global';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { useToast } from 'primevue/usetoast';
 import Button from 'primevue/button';
@@ -13,58 +13,72 @@ import { v4 as uuidv4 } from 'uuid';
 import DeletePopover from '../DeletePopover.vue';
 import { useSignalR } from '@/composables/useSignalR';
 import { KeyBindingDto } from '@/dtos/keyBindingDto';
+import { Dialog, MultiSelect, Select } from 'primevue';
 
-const props = defineProps({
-  id: {
-    type: String,
-    required: false,
-    default: undefined
-  },
-});
+const props = defineProps<{ id?: string }>();
 
 const router = useRouter();
 const toast = useToast();
 
-interface Form {
-  name?: string,
-}
 
-const form = ref<Form>({
-  name: "",
-});
 
-const initialForm = ref<Form>({ ...form.value });
+const isUpdateMode = computed(() => props.id != undefined);
 
-const shouldLoadKeyBindings = computed(() => props.id != undefined);
-
-const { data: bindings, isFetched } = useQuery({
+const { data: bindings, isFetching: isFetchingBindings } = useQuery({
   queryKey: ['keyBindings'],
   queryFn: getKeyBindings,
   staleTime: Infinity,
   refetchOnMount: false,
-  enabled: shouldLoadKeyBindings
+  enabled: isUpdateMode
 });
 
-const binding = computed(() => bindings.value?.find(x => x.id == props.id));
+const bindingToUpdate = computed(() => bindings.value?.find(x => x.id == props.id));
 
-watch([isFetched, props], () => {
-  if(props.id != undefined && isFetched.value == true && binding.value == undefined)// if this binding doesn't exists
+watch([isFetchingBindings], () => {
+  if(isUpdateMode.value == true && isFetchingBindings.value == false && bindingToUpdate.value == undefined)// if this binding doesn't exists
+  {
+    toast.add({ severity: "error", summary: "Failed", detail: "Binding not found.", life: 3000 });
     router.push({ name: Routes.KEY_BINDINGS });
+  }
 }, { immediate: true });
 
-const reinitializeForm = () => {
-  form.value.name = binding.value?.name ?? "";
+interface Form {
+  name?: string,
+  keys?: { 
+    ctrl: boolean,
+    alt: boolean,
+    keyCode: number
+  },
+  configurationIds?: string[]
+}
 
-  initialForm.value = { ...form.value };
-};
+const initialForm = computed<Form>(() => ({
+  name: bindingToUpdate.value?.name ?? "",
+  keys: bindingToUpdate.value != undefined && 
+    { 
+      ctrl: bindingToUpdate.value.control,
+      alt: bindingToUpdate.value.alt,
+      keyCode: bindingToUpdate.value.keyCode
+    } || undefined,
+  configurationIds: bindingToUpdate.value?.configurationIds
+}));
 
-watch([binding], () => {
-  reinitializeForm();
+const form = ref<Form>({...initialForm.value});
+
+watch(initialForm, () => {
+  form.value = {...initialForm.value};
 }, { immediate: true });
 
 const bindingFromForm = computed<KeyBindingDto>(() => {
-  const dto : KeyBindingDto = {};
-
+  const dto : KeyBindingDto = {
+    id: bindingToUpdate.value?.id ?? uuidv4(),
+    name: form.value.name ?? "",
+    control: form.value.keys?.ctrl ?? false,
+    alt: form.value.keys?.alt ?? false,
+    keyCode: form.value.keys?.keyCode ?? 0,
+    configurationIds: form.value.configurationIds ?? []
+  };
+  
   return dto;
 });
 
@@ -94,6 +108,8 @@ const isButtonSaveDisabled = computed(() =>
   isSaving.value == true || 
   isDeleting.value == true ||
   isNullOrWhitespace(form.value.name) == true || 
+  form.value.keys?.keyCode == undefined ||
+  (form.value.configurationIds?.length ?? 0) == 0 ||
   JSON.stringify(form.value) == JSON.stringify(initialForm.value) // if form is unchanged
 );
 
@@ -141,6 +157,67 @@ const onDeleteSecondClick = () => {
   deleteBinding(bindingFromForm.value);
 };
 
+const showAssignKeysDialog = ref(false);
+
+const keys = ref<{
+  isCtrlKeypressed?: boolean,
+  isAltKeyPressed?: boolean,
+  keyPressed?: number
+}>({});
+
+const onKeyPress = (e: KeyboardEvent) => {
+
+  e.preventDefault();
+  e.stopImmediatePropagation();
+
+  if(e.repeat) return;
+  
+  keys.value.isCtrlKeypressed = e.ctrlKey;
+  keys.value.isAltKeyPressed = e.altKey;
+  keys.value.keyPressed = e.key == "Control" || e.key == "Alt" ? undefined : e.keyCode;
+};
+
+watch(showAssignKeysDialog, () => {
+  if(showAssignKeysDialog.value == true)
+    document.addEventListener("keydown", onKeyPress);
+  else
+  {
+    document.removeEventListener("keydown", onKeyPress);
+    keys.value = {};
+  }
+});
+
+const keysToDisplay = computed(() => {
+  const keys : string[] = [];
+
+  if(form.value.keys?.ctrl)
+    keys.push("CTRL");
+
+  if(form.value.keys?.alt)
+    keys.push("ALT");
+
+  if(form.value.keys?.keyCode)
+    keys.push(form.value.keys.keyCode.toString());
+
+  return keys.join(" + ");
+});
+
+const onAssignKeysDialogConfirm = () => {
+  form.value.keys = {
+    ctrl: keys.value.isCtrlKeypressed ?? false,
+    alt: keys.value.isAltKeyPressed ?? false,
+    keyCode: keys.value.keyPressed!,
+  };
+
+  showAssignKeysDialog.value = false;
+};
+
+const { data: configurations, isFetching: isFetchingConfigurations, isError: failedFetchingConfigurations } = useQuery({
+  queryKey: ['configurations'],
+  queryFn: getConfigurations,
+  staleTime: Infinity
+});
+
 </script>
 
 <template>
@@ -158,7 +235,39 @@ const onDeleteSecondClick = () => {
       <InputText
         id="name"
         v-model="form.name"
-        placeholder="Ex: Apply 'Dimmed'"
+        placeholder="Ex: Apply Dimmed"
+      />
+    </div>
+
+    <div class="field">
+      <label for="name">Keys</label>
+      <p
+        class="text-yellow-500"
+        v-if="form.keys == undefined"
+      >
+        You did not define a combination of keys.
+      </p>
+      <p v-else>
+        {{ keysToDisplay }}
+      </p>
+      <Button
+        class="w-fit"
+        @click="() => showAssignKeysDialog = true"
+      >
+        Assign keys
+      </Button>
+    </div>
+
+    <div class="field">
+      <label for="name">Configurations to apply</label>
+      <MultiSelect
+        id="name"
+        v-model="form.configurationIds"
+        placeholder="Select a Configuration"
+        :options="configurations"
+        optionLabel="name"
+        optionValue="id"
+        :loading="isFetchingConfigurations || failedFetchingConfigurations"
       />
     </div>
 
@@ -185,7 +294,7 @@ const onDeleteSecondClick = () => {
       />
 
       <Button
-        v-if="binding != undefined"
+        v-if="isUpdateMode"
         class="w-fit"
         severity="danger"
         icon="pi pi-trash"
@@ -202,6 +311,63 @@ const onDeleteSecondClick = () => {
       />
     </div>
   </div>
+
+  <Dialog
+    v-model:visible="showAssignKeysDialog"
+    modal
+    :style="{ width: '30rem', height: '15rem' }"
+    :showHeader="false"
+    dismissableMask
+    contentClass="w-full h-full flex flex-col gap-2"
+    class
+  >
+    <div class="flex-1 flex flex-col gap-8 items-center justify-center">
+      <p>Press the combination of keys you would like to assign !</p>
+      <div class="flex gap-8 items-center justify-center">
+        <transition>
+          <div
+            class="key"
+            v-if="keys.isCtrlKeypressed"
+          >
+            CTRL
+          </div>
+        </transition>
+  
+        <transition>
+          <div
+            class="key"
+            v-if="keys.isAltKeyPressed"
+          >
+            ALT
+          </div>
+        </transition>
+  
+        <transition>
+          <div
+            class="key"
+            v-if="keys.keyPressed != undefined"
+          >
+            {{ keys.keyPressed }}
+          </div>
+        </transition>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2">
+      <Button
+        class="w-fit"
+        severity="primary"
+        label="Confirm"
+        :disabled="keys.keyPressed == undefined"
+        @click="onAssignKeysDialogConfirm"
+      />
+      <Button
+        class="w-fit"
+        severity="secondary"
+        label="Cancel"
+        @click="showAssignKeysDialog = false"
+      />
+    </div>
+  </Dialog>
 </template>
 
 <style scoped>
@@ -219,12 +385,19 @@ const onDeleteSecondClick = () => {
   @apply bg-slate-700 flex flex-col gap-3 p-3 rounded-lg
 }
 
-:deep(.temperature-slider .p-slider-range) {
-  @apply bg-transparent;
+.key
+{
+  @apply h-[70px] min-w-[70px] px-2 rounded-xl border-white border-2 border-dashed flex justify-center items-center font-bold text-xl;
 }
 
-:deep(.temperature-slider)
-{
-  @apply bg-gradient-to-r from-orange-400 to-white;
+.v-enter-active,
+.v-leave-active {
+  @apply transition-all duration-300;
 }
+
+.v-enter-from,
+.v-leave-to {
+  @apply w-0 h-0 text-[0px];
+}
+
 </style>

@@ -1,5 +1,4 @@
 ﻿using ScreenTemperature.DTOs;
-using ScreenTemperature.DTOs.Commands;
 using ScreenTemperature.Entities;
 
 namespace ScreenTemperature.Mappers
@@ -12,11 +11,10 @@ namespace ScreenTemperature.Mappers
             {
                 Id = entity.Id,
                 Name = entity.Name,
-                Commands = entity.Commands?.Select(x => x.ToDto()) ?? new List<CommandDto>(){},
+                ConfigurationIds = entity.Configurations.Select(x => x.Id).ToList(),
                 Alt = entity.Alt,
                 Control = entity.Control,
                 KeyCode = entity.KeyCode,
-                Shift = entity.Shift
             };
         }
     }

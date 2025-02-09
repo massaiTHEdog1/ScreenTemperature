@@ -6,19 +6,12 @@ using ScreenTemperature.Mappers;
 using ScreenTemperature.Services;
 
 [AllowAnonymous]
-public class ScreenController
+public class ScreenController(IScreenService screenService)
 {
-    private readonly IScreenService _screenService;
-
-    public ScreenController(IScreenService screenService)
-    {
-        _screenService = screenService;
-    }
-
     [HttpGet("/api/screens")]
     public async Task<IResult> GetAllScreensAsync()
     {
-        var screens = await _screenService.GetScreensAsync();
+        var screens = await screenService.GetScreensAsync();
 
         return TypedResults.Ok(screens.Select(x => x.ToDto()));
     }

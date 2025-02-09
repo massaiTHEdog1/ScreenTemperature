@@ -1,9 +1,8 @@
 export interface KeyBindingDto {
   id: string;
   name: string;
-  commands: any[];
+  configurationIds: string[];
   keyCode: number;
   alt: boolean;
-  shift: boolean;
   control: boolean;
 }
