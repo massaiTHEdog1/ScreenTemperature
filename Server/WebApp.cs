@@ -158,7 +158,8 @@ namespace ScreenTemperature
                 WebApplication.UseHsts();
             }
 
-            //app.UseStaticFiles();
+            WebApplication.UseDefaultFiles();
+            WebApplication.UseStaticFiles();
 
             if (builder.Environment.IsDevelopment())
             {
@@ -176,6 +177,8 @@ namespace ScreenTemperature
             WebApplication.MapControllers();
 
             WebApplication.MapHub<Hub>("/hub");
+
+            WebApplication.Urls.Add("https://localhost:61983");
 
             Task = WebApplication.RunAsync(cancellationToken);
         }

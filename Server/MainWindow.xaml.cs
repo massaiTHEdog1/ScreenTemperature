@@ -17,11 +17,17 @@ namespace ScreenTemperature
     public partial class MainWindow : Window
     {
         private readonly NotifyIcon _notifyIcon;
-        
+
+#if DEBUG
+        public string SourceUrl { get; set; } = "http://localhost:5173/";
+#else
+        public string SourceUrl { get; set; } = "https://localhost:61983/";
+#endif
 
         public MainWindow()
         {
             InitializeComponent();
+            DataContext = this;
 
             _notifyIcon = new NotifyIcon();
             _notifyIcon.Icon = ScreenTemperature.Resources.icon;
