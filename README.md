@@ -15,4 +15,4 @@ Please make sure your video drivers are up to date as it's not working on very o
   
 ![Screenshot](Screenshots/Screenshot1.jpg)  
   
-Download : https://github.com/massaiTHEdog1/ScreenTemperature/blob/old_version/Download/ScreenTemperature.zip
+Download : https://raw.githubusercontent.com/massaiTHEdog1/ScreenTemperature/refs/heads/old_version/Download/ScreenTemperature.zip
