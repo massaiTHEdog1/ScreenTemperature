@@ -115,8 +115,9 @@ namespace ScreenTemperature
                     foreach (var keyBinding in keyBindings)
                     {
                         _ = HotKeyManager.Instance.RegisterHotKeyAsync(keyBinding.KeyCode, keyBinding.Alt, keyBinding.Control, false);
-                        HotKeyManager.HotKeyPressed += HotKeyManager_HotKeyPressed;
                     }
+
+                    HotKeyManager.HotKeyPressed += HotKeyManager_HotKeyPressed;
                 }
 
                 #endregion
