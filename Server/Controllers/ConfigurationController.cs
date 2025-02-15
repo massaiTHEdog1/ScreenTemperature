@@ -49,6 +49,7 @@ public class ConfigurationController(ILogger<ConfigurationController> logger, Da
         entity.DevicePath = dto.DevicePath;
         entity.ApplyBrightness = dto.ApplyBrightness;
         entity.Brightness = dto.Brightness;
+        entity.ApplyAtStartup = dto.ApplyAtStartup;
 
         if (entity is ColorConfiguration colorConfiguration && dto is ColorConfigurationDto colorConfigurationDto)
         {

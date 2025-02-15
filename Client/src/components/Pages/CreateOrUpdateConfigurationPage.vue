@@ -1,22 +1,22 @@
 <script setup lang="ts">
 import { useScreens } from '@/composables/useScreens';
+import { useSignalR } from '@/composables/useSignalR';
 import { ColorConfigurationDto } from '@/dtos/configurations/colorConfigurationDto';
 import { ConfigurationDiscriminator, ConfigurationDto } from '@/dtos/configurations/configurationDto';
 import { TemperatureConfigurationDto } from '@/dtos/configurations/temperatureConfigurationDto';
 import { Routes, deleteConfiguration, getConfigurations, isNullOrWhitespace, saveConfiguration } from '@/global';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { useToast } from 'primevue/usetoast';
 import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
 import ColorPicker from 'primevue/colorpicker';
 import InputText from 'primevue/inputtext';
 import SelectButton from 'primevue/selectbutton';
 import Slider from 'primevue/slider';
+import { useToast } from 'primevue/usetoast';
+import { v4 as uuidv4 } from 'uuid';
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { v4 as uuidv4 } from 'uuid';
 import DeletePopover from '../DeletePopover.vue';
-import { useSignalR } from '@/composables/useSignalR';
 
 const props = defineProps<{ id?: string }>();
 
@@ -50,6 +50,7 @@ interface Form {
   temperature?: number,
   isColorChecked?: boolean,
   color?: string,
+  applyAtStartup?: boolean,
 }
 
 const initialForm = computed<Form>(() => ({
@@ -62,6 +63,7 @@ const initialForm = computed<Form>(() => ({
   temperature: (configurationToUpdate.value as TemperatureConfigurationDto)?.intensity ?? 6600,
   isColorChecked: (configurationToUpdate.value as ColorConfigurationDto)?.applyColor ?? false,
   color: (configurationToUpdate.value as ColorConfigurationDto)?.color ?? "FFFFFF",
+  applyAtStartup: configurationToUpdate.value?.applyAtStartup ?? false
 }));
 
 const form = ref<Form>({...initialForm.value});
@@ -114,6 +116,7 @@ const configurationFromForm = computed<ConfigurationDto>(() => {
       brightness: form.value.brightness ?? 0,
       applyIntensity: form.value.isTemperatureChecked ?? false,
       intensity: form.value.temperature ?? 0,
+      applyAtStartup: form.value.applyAtStartup ?? false
     } satisfies TemperatureConfigurationDto;
   }
   else if(form.value.type == ConfigurationDiscriminator.ColorConfiguration) 
@@ -127,6 +130,7 @@ const configurationFromForm = computed<ConfigurationDto>(() => {
       brightness: form.value.brightness ?? 0,
       applyColor: form.value.isColorChecked ?? false,
       color: `#${form.value.color ?? "FFFFFF"}`,
+      applyAtStartup: form.value.applyAtStartup ?? false
     } satisfies ColorConfigurationDto;
   }
   else
@@ -412,6 +416,22 @@ const onApplyClick = () => {
           <p class="w-[25px] text-right">
             {{ form.brightness }}
           </p>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="flex gap-2 items-center">
+          <Checkbox
+            :disabled="!isBrightnessSupported"
+            v-model="form.applyAtStartup"
+            :binary="true"
+            inputId="startup"
+          />
+          <label for="startup">Apply at startup</label>
+          <i
+            class="pi pi-question-circle"
+            v-tooltip.right="'Apply this configuration when the program starts.'"
+          />
         </div>
       </div>
 

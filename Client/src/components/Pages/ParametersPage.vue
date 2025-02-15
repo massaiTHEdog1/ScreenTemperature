@@ -16,7 +16,6 @@ const { data: parameters, isFetching: isFetchingParameters, isError: failedFetch
 });
 
 const updateStartParameter = (newvalue: boolean) => {
-  console.log("yepaaa", newvalue);
   mutate({
     ...parameters.value,
     startApplicationOnUserLogin: newvalue

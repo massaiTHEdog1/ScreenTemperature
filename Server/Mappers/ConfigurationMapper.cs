@@ -18,6 +18,7 @@ namespace ScreenTemperature.Mappers
                     Brightness = temperatureConfiguration.Brightness,
                     ApplyBrightness = temperatureConfiguration.ApplyBrightness,
                     ApplyIntensity = temperatureConfiguration.ApplyIntensity,
+                    ApplyAtStartup = temperatureConfiguration.ApplyAtStartup,
                 };
             }
             else if (entity is ColorConfiguration colorConfiguration)
@@ -31,6 +32,7 @@ namespace ScreenTemperature.Mappers
                     Brightness = colorConfiguration.Brightness,
                     ApplyBrightness = colorConfiguration.ApplyBrightness,
                     ApplyColor = colorConfiguration.ApplyColor,
+                    ApplyAtStartup = colorConfiguration.ApplyAtStartup,
                 };
             }
             else

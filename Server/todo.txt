@@ -1,4 +1,0 @@
--Update options
--Apply first profile at startup
--Add response to events (login/logout/etc.)
--Add icon in system tray

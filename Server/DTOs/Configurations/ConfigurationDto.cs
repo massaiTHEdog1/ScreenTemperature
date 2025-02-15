@@ -15,5 +15,6 @@ namespace ScreenTemperature.DTOs.Configurations
         public string DevicePath { get; set; }
         public bool ApplyBrightness { get; set; }
         public byte Brightness { get; set; }
+        public bool ApplyAtStartup { get; set; }
     }
 }

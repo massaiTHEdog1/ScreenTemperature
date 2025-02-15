@@ -97,6 +97,13 @@ namespace ScreenTemperature
 
             Task.Run(async () =>
             {
+                #region Load screens in memory
+
+                var screenService = WebApplication.Services.GetService<IScreenService>();
+                await screenService.GetScreensAsync();// load screens in memory
+
+                #endregion
+
                 #region Register HotKeys
 
                 using (var scope = WebApplication.Services.CreateScope())
@@ -114,10 +121,29 @@ namespace ScreenTemperature
 
                 #endregion
 
-                #region Load screens in memory
+                #region Apply configurations
 
-                var screenService = WebApplication.Services.GetService<IScreenService>();
-                await screenService.GetScreensAsync();// load screens in memory
+                using (var scope = WebApplication.Services.CreateScope())
+                {
+                    var databaseContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+
+                    var configurations = await databaseContext.Configurations.ToListAsync();
+
+                    foreach (var config in configurations)
+                    {
+                        if(config.ApplyAtStartup)
+                        {
+                            if(config.ApplyBrightness)
+                                await screenService.ApplyBrightnessToScreenAsync(config.Brightness, config.DevicePath);
+
+                            if(config is TemperatureConfiguration temperatureConfiguration && temperatureConfiguration.ApplyIntensity)
+                                await screenService.ApplyKelvinToScreenAsync(temperatureConfiguration.Intensity, temperatureConfiguration.DevicePath);
+
+                            if (config is ColorConfiguration colorConfiguration && colorConfiguration.ApplyColor)
+                                await screenService.ApplyColorToScreenAsync(colorConfiguration.Color, colorConfiguration.DevicePath);
+                        }
+                    }
+                }
 
                 #endregion
             });

@@ -10,4 +10,5 @@ export interface ConfigurationDto {
   devicePath: string;
   applyBrightness: boolean;
   brightness: number;
+  applyAtStartup: boolean;
 }
