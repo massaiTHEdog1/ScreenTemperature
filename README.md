@@ -1,4 +1,7 @@
+#### This branch is an archive and is not longer supported.
+
 # ScreenTemperature
+
 Software that allows you to change the screen color temperature like f.lux.  
 What's different with f.lux?  
 -Instant color modification (no smooth transition)  
@@ -10,6 +13,6 @@ What's different with f.lux?
 
 Please make sure your video drivers are up to date as it's not working on very old versions.
   
-![Screenshot](https://github.com/massaiTHEdog1/ScreenTemperature/blob/master/Screenshots/Screenshot1.jpg)  
+![Screenshot](Screenshots/Screenshot1.jpg)  
   
-Download : https://github.com/massaiTHEdog1/ScreenTemperature/releases/latest
+Download : https://github.com/massaiTHEdog1/ScreenTemperature/blob/old_version/Download/ScreenTemperature.zip
