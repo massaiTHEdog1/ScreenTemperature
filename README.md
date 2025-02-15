@@ -43,3 +43,7 @@ Build easily with make :
 ```
 make
 ```
+
+## Credits
+
+Thanks to [Tanner Helland](https://github.com/tannerhelland) for his algorithm : https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm-code.html
