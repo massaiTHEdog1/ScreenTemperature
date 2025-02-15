@@ -15,10 +15,12 @@ const transitionTime = ref(150);
 
 useSignalR();
 
+const version = import.meta.env.VITE_APP_VERSION;
+
 </script>
 
 <template>
-  <div class="h-full flex flex-col gap-2 bg-[#1B2126] text-white p-3">
+  <div class="h-full flex flex-col gap-2 bg-[#1B2126] text-white p-3 relative">
     <div class="w-full h-fit max-h-[min(50%,250px)] p-5 bg-[#171717] mx-auto rounded-lg border-2 border-[#4D4D4D]">
       <ScreensViewer>
         <template #no-screen>
@@ -57,6 +59,9 @@ useSignalR();
         </transition-group>
       </div>
     </div>
+    <p class="absolute right-1 bottom-1">
+      {{ version }}
+    </p>
   </div>
   <Toast />
 </template>

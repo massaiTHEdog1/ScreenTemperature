@@ -1,5 +1,6 @@
 import { ConfigurationDto } from "./dtos/configurations/configurationDto";
 import { KeyBindingDto } from "./dtos/keyBindingDto";
+import { ParametersDto } from "./dtos/parameters";
 import { ScreenDto } from "./dtos/screenDto";
 
 export enum Routes {
@@ -88,6 +89,30 @@ export const deleteKeyBinding = async (binding: KeyBindingDto) : Promise<void> =
 
   if(response.status == 200)
     return;
+
+  throw Error();
+};
+
+export const getParameters = async () : Promise<ParametersDto> => {
+  const response = await fetch(`${import.meta.env.VITE_SERVER_BASE_URL}/api/parameters`);
+
+  if(response.status == 200)
+    return await response.json();
+
+  throw Error();
+};
+
+export const updateParameters = async (parameters: ParametersDto) : Promise<ParametersDto> => {
+  const response = await fetch(`${import.meta.env.VITE_SERVER_BASE_URL}/api/parameters`, { 
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(parameters)
+  });
+
+  if(response.status == 200)
+    return await response.json();
 
   throw Error();
 };

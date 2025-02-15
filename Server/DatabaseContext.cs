@@ -1,6 +1,10 @@
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using ScreenTemperature.Entities;
 using ScreenTemperature.Entities.Configurations;
+using System.IO;
 using Path = System.IO.Path;
 
 namespace ScreenTemperature;

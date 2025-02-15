@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.Win32;
 using ScreenTemperature.Services;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace ScreenTemperature.Hubs;
 
-public class Hub(IScreenService screenService) : Microsoft.AspNetCore.SignalR.Hub
+public class Hub(IScreenService screenService, IParametersService optionsService) : Microsoft.AspNetCore.SignalR.Hub
 {
     public async Task ApplyBrightness(int brightness, string devicePath)
     {

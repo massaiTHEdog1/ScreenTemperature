@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using ScreenTemperature.DTOs;
 using ScreenTemperature.Mappers;
 using ScreenTemperature.Services;
 
-[AllowAnonymous]
 public class ScreenController(IScreenService screenService)
 {
     [HttpGet("/api/screens")]

@@ -1,10 +1,11 @@
-import { RouteRecordRaw, createRouter, createWebHistory } from "vue-router";
 import { Routes } from "@/global";
+import { RouteRecordRaw, createRouter, createWebHistory } from "vue-router";
 import CategorySelectionPage from "./components/Pages/CategorySelectionPage.vue";
 import ConfigurationsPage from "./components/Pages/ConfigurationsPage.vue";
 import CreateOrUpdateConfigurationPage from "./components/Pages/CreateOrUpdateConfigurationPage.vue";
-import KeyBindingsPage from "./components/Pages/KeyBindingsPage.vue";
 import CreateOrUpdateKeyBindingPage from "./components/Pages/CreateOrUpdateKeyBindingPage.vue";
+import KeyBindingsPage from "./components/Pages/KeyBindingsPage.vue";
+import ParametersPage from "./components/Pages/ParametersPage.vue";
 
 const routes: RouteRecordRaw[] = [
   { 
@@ -47,6 +48,11 @@ const routes: RouteRecordRaw[] = [
             props: route => ({ id: route.params.id })
           }
         ]
+      },
+      { 
+        name: Routes.PARAMETERS,
+        path: "parameters", 
+        component: ParametersPage,
       },
     ]
   },

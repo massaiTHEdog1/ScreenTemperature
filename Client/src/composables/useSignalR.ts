@@ -1,5 +1,5 @@
+import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { onUnmounted, ref } from "vue";
-import { HubConnection, HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 
 const connection = ref<HubConnection>(new HubConnectionBuilder()
   .withUrl(`${import.meta.env.VITE_SERVER_BASE_URL}/hub`)

@@ -1,185 +1,111 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Web.WebView2.Core;
 using ScreenTemperature.Entities.Configurations;
 using ScreenTemperature.Services;
+using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
+using static ScreenTemperature.Win32;
 
 namespace ScreenTemperature
 {
-    public class HotKeyManager(IServiceProvider serviceProvider, IScreenService screenService)
+    public class HotKeyPressedEventArgs : EventArgs
     {
-        #region DLL import
+        public int KeyCode { get; set; }
+        public bool Alt { get; set; }
+        public bool Ctrl { get; set; }
+        public bool Shift { get; set; }
+    }
 
-        private struct POINT
+    public class HotKeyManager
+    {
+        private static HotKeyManager _instance;
+        public static HotKeyManager Instance
         {
-            public int x;
-            public int y;
+            get 
+            { 
+                if(_instance == null) _instance = new HotKeyManager();
+                return _instance; 
+            }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 8)]
-        private struct MSG
-        {
-            public IntPtr hwnd;
-            public uint message;
-            public UIntPtr wParam;
-            public UIntPtr lParam;
-            public uint time;
-            public POINT pt;
-        }
-
-        [Flags]
-        public enum KeyModifiers : uint
-        {
-            Alt = 1,
-            Control = 2,
-            Shift = 4
-        }
-
-        [DllImport("user32.dll")]
-        private static extern uint GetQueueStatus(uint flags);
-
-        [DllImport("user32.dll")]
-        private static extern bool PeekMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax, uint wRemoveMsg);
-
-        [DllImport("user32.dll")]
-        private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
-
-        [DllImport("user32.dll")]
-        private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
-
-        #endregion
+        public Task Task { get; private set; }
 
         private BlockingCollection<(uint virtualKeyCode, bool alt, bool control, bool shift, TaskCompletionSource<bool> taskCompletionSource)> _hotkeysToRegister = new BlockingCollection<(uint virtualKeyCode, bool alt, bool control, bool shift, TaskCompletionSource<bool> taskCompletionSource)>();
         private BlockingCollection<(uint virtualKeyCode, bool alt, bool control, bool shift, TaskCompletionSource<bool> taskCompletionSource)> _hotkeysToUnregister = new BlockingCollection<(uint virtualKeyCode, bool alt, bool control, bool shift, TaskCompletionSource<bool> taskCompletionSource)>();
 
-        public async Task InitAsync()
+        public delegate void HotKeyPressedEventHandler(object sender, HotKeyPressedEventArgs e);
+        public static event HotKeyPressedEventHandler HotKeyPressed;
+
+
+        HotKeyManager()
         {
-            _ = Task.Factory.StartNew(RunAsync);// start listener
-
-            using (var scope = serviceProvider.CreateScope())
-            {
-                var databaseContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
-
-                var keyBindings = await databaseContext.KeyBindings.ToListAsync();
-
-                foreach (var keyBinding in keyBindings)
-                {
-                    await RegisterHotKeyAsync(keyBinding.KeyCode, keyBinding.Alt, keyBinding.Control, false);
-                }
-            }
+            // private constructor
         }
 
-        private async Task RunAsync()
+        public void Start(CancellationToken cancellationToken)
         {
-            MSG msg;
-
-            while (true)
+            Task = Task.Run(() =>
             {
-                try
-                { 
-                    // if an unregistration is in queue
-                    if (_hotkeysToUnregister.Any())
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    try
                     {
-                        var keyCodeToUnregister = _hotkeysToUnregister.Take();
-
-                        UnregisterHotKey(IntPtr.Zero, GenerateHotKeyId(keyCodeToUnregister.virtualKeyCode, keyCodeToUnregister.alt, keyCodeToUnregister.control, keyCodeToUnregister.shift));
-
-                        // send result
-                        keyCodeToUnregister.taskCompletionSource.SetResult(true);
-                    }
-
-                    // if a registration is in queue
-                    if (_hotkeysToRegister.Any())
-                    {
-                        var keyCodeToRegister = _hotkeysToRegister.Take();
-
-                        var mask = keyCodeToRegister.alt ? (uint)KeyModifiers.Alt : 0;
-                        mask = mask | (keyCodeToRegister.control ? (uint)KeyModifiers.Control : 0);
-                        mask = mask | (keyCodeToRegister.shift ? (uint)KeyModifiers.Shift : 0);
-
-                        var hotkeyRegistered = RegisterHotKey(IntPtr.Zero, GenerateHotKeyId(keyCodeToRegister.virtualKeyCode, keyCodeToRegister.alt, keyCodeToRegister.control, keyCodeToRegister.shift), mask, keyCodeToRegister.virtualKeyCode);
-
-                        // send result
-                        keyCodeToRegister.taskCompletionSource.SetResult(hotkeyRegistered);
-                    }
-
-                    // 0x0080 = QS_HOTKEY -> A WM_HOTKEY message is in the queue.
-                    var availableMessages = GetQueueStatus(0x0080);// Get hotkey messages
-
-                    if (availableMessages >> 16 == 0x0080)
-                    {
-                        PeekMessage(out msg, IntPtr.Zero, 0x312, 0x312, 1);// message received : WM_HOTKEY 0x312
-
-                        var keyCode = ExtractKeyCodeFromHotKeyId(msg.wParam);
-                        var altWasPressed = ((KeyModifiers)msg.lParam & KeyModifiers.Alt) == KeyModifiers.Alt;
-                        var controlWasPressed = ((KeyModifiers)msg.lParam & KeyModifiers.Control) == KeyModifiers.Control;
-                        var shiftWasPressed = ((KeyModifiers)msg.lParam & KeyModifiers.Shift) == KeyModifiers.Shift;
-
-                        using (var scope = serviceProvider.CreateScope())
+                        // if an unregistration is in queue
+                        if (_hotkeysToUnregister.Any())
                         {
-                            var databaseContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+                            var keyCodeToUnregister = _hotkeysToUnregister.Take();
 
-                            var matchingBinding = databaseContext.KeyBindings.Include(x => x.Configurations).SingleOrDefault(x => x.KeyCode == keyCode && x.Alt == altWasPressed && x.Control == controlWasPressed);
+                            UnregisterHotKey(IntPtr.Zero, GenerateHotKeyId(keyCodeToUnregister.virtualKeyCode, keyCodeToUnregister.alt, keyCodeToUnregister.control, keyCodeToUnregister.shift));
 
-                            if (matchingBinding != null)
-                            {
-                                foreach(var config in matchingBinding.Configurations)
-                                {
-                                    var result = false;
-                                        
-                                    if (config.ApplyBrightness)
-                                    {
-                                        try
-                                        {
-                                            result = await screenService.ApplyBrightnessToScreenAsync(config.Brightness, config.DevicePath);
-                                        }
-                                        catch (Exception ex) { }
-
-                                        //await Clients.All.SendAsync("ApplyTemperatureResult", result);
-
-                                    }
-
-                                    if (config is ColorConfiguration colorConfiguration)
-                                    {
-                                        if(colorConfiguration.ApplyColor)
-                                        {
-                                            result = false;
-
-                                            try
-                                            {
-                                                result = await screenService.ApplyColorToScreenAsync(colorConfiguration.Color, config.DevicePath);
-                                            }
-                                            catch (Exception ex) { }
-                                        }
-                                    }
-                                    else if(config is TemperatureConfiguration temperatureConfiguration)
-                                    {
-                                        if (temperatureConfiguration.ApplyIntensity)
-                                        {
-                                            result = false;
-
-                                            try
-                                            {
-                                                result = await screenService.ApplyKelvinToScreenAsync(temperatureConfiguration.Intensity, config.DevicePath);
-                                            }
-                                            catch (Exception ex) { }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        throw new NotImplementedException();
-                                    }
-                                }
-                            }
+                            // send result
+                            keyCodeToUnregister.taskCompletionSource.SetResult(true);
                         }
+
+                        // if a registration is in queue
+                        if (_hotkeysToRegister.Any())
+                        {
+                            var keyCodeToRegister = _hotkeysToRegister.Take();
+
+                            var mask = keyCodeToRegister.alt ? (uint)KeyModifiers.Alt : 0;
+                            mask = mask | (keyCodeToRegister.control ? (uint)KeyModifiers.Control : 0);
+                            mask = mask | (keyCodeToRegister.shift ? (uint)KeyModifiers.Shift : 0);
+
+                            var hotkeyRegistered = RegisterHotKey(IntPtr.Zero, GenerateHotKeyId(keyCodeToRegister.virtualKeyCode, keyCodeToRegister.alt, keyCodeToRegister.control, keyCodeToRegister.shift), mask, keyCodeToRegister.virtualKeyCode);
+
+                            // send result
+                            keyCodeToRegister.taskCompletionSource.SetResult(hotkeyRegistered);
+                        }
+
+                        // 0x0080 = QS_HOTKEY -> A WM_HOTKEY message is in the queue.
+                        var availableMessages = GetQueueStatus(0x0080);// Get hotkey messages
+
+                        if (availableMessages >> 16 == 0x0080)
+                        {
+                            PeekMessage(out var msg, IntPtr.Zero, WM_HOTKEY, WM_HOTKEY, 1);
+
+                            var keyCode = ExtractKeyCodeFromHotKeyId(msg.wParam);
+                            var altWasPressed = ((KeyModifiers)msg.lParam & KeyModifiers.Alt) == KeyModifiers.Alt;
+                            var controlWasPressed = ((KeyModifiers)msg.lParam & KeyModifiers.Control) == KeyModifiers.Control;
+                            var shiftWasPressed = ((KeyModifiers)msg.lParam & KeyModifiers.Shift) == KeyModifiers.Shift;
+
+                            HotKeyPressed?.Invoke(this, new HotKeyPressedEventArgs()
+                            {
+                                KeyCode = keyCode,
+                                Alt = altWasPressed,
+                                Ctrl = controlWasPressed,
+                                Shift = shiftWasPressed,
+                            });
+                        }
+
                     }
-
+                    catch (Exception ex) { }
                 }
-                catch(Exception ex) { }
-
-                await Task.Delay(200);
-            }
+            });
         }
 
         // generate a unique Id for a key

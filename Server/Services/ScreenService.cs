@@ -1,11 +1,8 @@
-
-using ScreenTemperature.DTOs;
+using Microsoft.Extensions.Logging;
 using ScreenTemperature.Entities;
-using ScreenTemperature.Mappers;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using static ScreenTemperature.Win32;
 
 namespace ScreenTemperature.Services;
 
@@ -19,103 +16,6 @@ public interface IScreenService
 
 public class ScreenService(ILogger<ScreenService> logger) : IScreenService
 {
-    [DllImport("gdi32.dll")]
-    private static extern bool SetDeviceGammaRamp(int hdc, IntPtr ramp);
-
-    [DllImport("gdi32.dll")]
-    private static extern IntPtr CreateDC(string lpszDriver, string? lpszDevice, string? lpszOutput, IntPtr lpInitData);
-
-    [DllImport("gdi32.dll")]
-    private static extern bool DeleteDC(IntPtr hdc);
-
-    [DllImport("Dxva2.dll")]
-    private static extern bool GetMonitorBrightness(IntPtr hdc, ref uint pdwMinimumBrightness, ref uint pdwCurrentBrightness, ref uint pdwMaximumBrightness);
-
-    [DllImport("Dxva2.dll")]
-    private static extern bool SetMonitorBrightness(IntPtr hMonitor, uint dwNewBrightness);
-
-    [DllImport("Dxva2.dll")]
-    private static extern bool GetMonitorCapabilities(IntPtr hdc, out MC_CAPS pdwMonitorCapabilities, out MC_SUPPORTED_COLOR_TEMPERATURE pdwSupportedColorTemperatures);
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct Rect
-    {
-        public int left;
-        public int top;
-        public int right;
-        public int bottom;
-    }
-
-    [DllImport("user32.dll")]
-    private static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr lprcClip, EnumMonitorsDelegate lpfnEnum, IntPtr dwData);
-
-    delegate bool EnumMonitorsDelegate(IntPtr hMonitor, IntPtr hdcMonitor, ref Rect lprcMonitor, IntPtr dwData);
-
-    [Flags]
-    internal enum MonitorInfoFlags : uint
-    {
-        None = 0,
-        Primary = 1
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct MonitorInfo
-    {
-        internal uint Size;
-        public readonly Rect Bounds;
-        public readonly Rect WorkingArea;
-        public readonly MonitorInfoFlags Flags;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        public readonly string DisplayName;
-    }
-
-    [DllImport("user32")]
-    private static extern bool GetMonitorInfo(IntPtr monitorHandle, ref MonitorInfo monitorInfo);
-
-    [DllImport("Dxva2.dll")]
-    private static extern bool GetNumberOfPhysicalMonitorsFromHMONITOR(IntPtr hMonitor, out uint pdwNumberOfPhysicalMonitors);
-
-    [DllImport("Dxva2.dll")]
-    private static extern bool GetPhysicalMonitorsFromHMONITOR(IntPtr hMonitor, uint dwPhysicalMonitorArraySize, [Out] PHYSICAL_MONITOR[] pPhysicalMonitorArray);
-
-    [DllImport("Dxva2.dll")]
-    private static extern bool DestroyPhysicalMonitors(uint dwPhysicalMonitorArraySize, [In] PHYSICAL_MONITOR[] pPhysicalMonitorArray);
-
-    // found on https://github.com/emoacht/Monitorian/blob/master/Source/Monitorian.Core/Models/Monitor/MonitorConfiguration.cs
-    [Flags]
-    private enum MC_CAPS
-    {
-        MC_CAPS_NONE = 0x00000000,
-        MC_CAPS_MONITOR_TECHNOLOGY_TYPE = 0x00000001,
-        MC_CAPS_BRIGHTNESS = 0x00000002,
-        MC_CAPS_CONTRAST = 0x00000004,
-        MC_CAPS_COLOR_TEMPERATURE = 0x00000008,
-        MC_CAPS_RED_GREEN_BLUE_GAIN = 0x00000010,
-        MC_CAPS_RED_GREEN_BLUE_DRIVE = 0x00000020,
-        MC_CAPS_DEGAUSS = 0x00000040,
-        MC_CAPS_DISPLAY_AREA_POSITION = 0x00000080,
-        MC_CAPS_DISPLAY_AREA_SIZE = 0x00000100,
-        MC_CAPS_RESTORE_FACTORY_DEFAULTS = 0x00000400,
-        MC_CAPS_RESTORE_FACTORY_COLOR_DEFAULTS = 0x00000800,
-        MC_RESTORE_FACTORY_DEFAULTS_ENABLES_MONITOR_SETTINGS = 0x00001000
-    }
-
-    // found on https://github.com/emoacht/Monitorian/blob/master/Source/Monitorian.Core/Models/Monitor/MonitorConfiguration.cs
-    [Flags]
-    private enum MC_SUPPORTED_COLOR_TEMPERATURE
-    {
-        MC_SUPPORTED_COLOR_TEMPERATURE_NONE = 0x00000000,
-        MC_SUPPORTED_COLOR_TEMPERATURE_4000K = 0x00000001,
-        MC_SUPPORTED_COLOR_TEMPERATURE_5000K = 0x00000002,
-        MC_SUPPORTED_COLOR_TEMPERATURE_6500K = 0x00000004,
-        MC_SUPPORTED_COLOR_TEMPERATURE_7500K = 0x00000008,
-        MC_SUPPORTED_COLOR_TEMPERATURE_8200K = 0x00000010,
-        MC_SUPPORTED_COLOR_TEMPERATURE_9300K = 0x00000020,
-        MC_SUPPORTED_COLOR_TEMPERATURE_10000K = 0x00000040,
-        MC_SUPPORTED_COLOR_TEMPERATURE_11500K = 0x00000080
-    }
-
     private bool GetScreenPhysicalMonitor(string devicePath, out PHYSICAL_MONITOR[] physicalMonitors)
     {
         physicalMonitors = [];

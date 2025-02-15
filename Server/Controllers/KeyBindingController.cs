@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ScreenTemperature;
 using ScreenTemperature.DTOs;
 using ScreenTemperature.DTOs.Configurations;
@@ -8,8 +10,7 @@ using ScreenTemperature.Entities;
 using ScreenTemperature.Mappers;
 using System.ComponentModel.DataAnnotations;
 
-[AllowAnonymous]
-public class KeyBindingController(ILogger<KeyBindingController> logger, DatabaseContext databaseContext, HotKeyManager hotKeyManager)
+public class KeyBindingController(ILogger<KeyBindingController> logger, DatabaseContext databaseContext)
 {
     [HttpGet("/api/keybindings")]
     public async Task<IResult> GetAllAsync(CancellationToken ct)
@@ -46,7 +47,7 @@ public class KeyBindingController(ILogger<KeyBindingController> logger, Database
             // if binding is updated
             if (entity.KeyCode != dto.KeyCode || entity.Alt != dto.Alt || entity.Control != dto.Control || !entity.Configurations.Select(x => x.Id).Order().SequenceEqual(dto.ConfigurationIds.Order()))
             {
-                await hotKeyManager.UnregisterHotKeyAsync(entity.KeyCode, entity.Alt, entity.Control, false);
+                await HotKeyManager.Instance.UnregisterHotKeyAsync(entity.KeyCode, entity.Alt, entity.Control, false);
                 shouldRegisterBinding = true;
             }
         }
@@ -63,7 +64,7 @@ public class KeyBindingController(ILogger<KeyBindingController> logger, Database
 
         if (shouldRegisterBinding)
         {
-            isHotKeyRegistered = await hotKeyManager.RegisterHotKeyAsync(dto.KeyCode, dto.Alt, dto.Control, false);
+            isHotKeyRegistered = await HotKeyManager.Instance.RegisterHotKeyAsync(dto.KeyCode, dto.Alt, dto.Control, false);
         }
 
         return TypedResults.Ok(new KeyBindingWithHotKeyRegistrationResultDto()
@@ -86,7 +87,7 @@ public class KeyBindingController(ILogger<KeyBindingController> logger, Database
 
         await databaseContext.SaveChangesAsync(ct);
 
-        await hotKeyManager.UnregisterHotKeyAsync(entity.KeyCode, entity.Alt, entity.Control, false);
+        await HotKeyManager.Instance.UnregisterHotKeyAsync(entity.KeyCode, entity.Alt, entity.Control, false);
 
         return TypedResults.Ok();
     }

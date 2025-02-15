@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ScreenTemperature;
 using ScreenTemperature.DTOs;
 using ScreenTemperature.DTOs.Configurations;
@@ -10,7 +12,6 @@ using ScreenTemperature.Mappers;
 using ScreenTemperature.Services;
 using System.ComponentModel.DataAnnotations;
 
-[AllowAnonymous]
 public class ConfigurationController(ILogger<ConfigurationController> logger, DatabaseContext databaseContext, IScreenService screenService)
 {
     [HttpGet("/api/configurations")]
