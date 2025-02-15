@@ -18,6 +18,7 @@ public class DatabaseContext : DbContext
     public DbSet<Configuration> Configurations { get; set; }
     public DbSet<TemperatureConfiguration> TemperatureConfigurations { get; set; }
     public DbSet<ColorConfiguration> ColorConfigurations { get; set; }
+    public DbSet<Parameter> Parameters { get; set; }
 
     public string DbPath { get; }
 

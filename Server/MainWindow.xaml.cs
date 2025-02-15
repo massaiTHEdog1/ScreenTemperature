@@ -36,11 +36,22 @@ namespace ScreenTemperature
             _notifyIcon.Click += NotifyIconOnClick;
         }
 
-        private void Window_OnLoaded(object sender, RoutedEventArgs e)// executed after webapp is started
+        private async void Window_OnLoaded(object sender, RoutedEventArgs e)
         {
-#if !DEBUG
-            WindowState = WindowState.Minimized;
-#endif
+            // wait until server is built
+            await Task.Run(async () => {
+                while(WebApp.Instance.WebApplication == null) { await Task.Delay(25);  }
+            });
+
+            using(var scope = WebApp.Instance.WebApplication.Services.CreateScope())
+            {
+                var parametersService = scope.ServiceProvider.GetRequiredService<IParametersService>();
+
+                var parameters = await parametersService.GetParametersAsync();
+
+                if(parameters.MinimizeOnStartup)
+                    WindowState = WindowState.Minimized;
+            }
         }
 
         ~MainWindow()

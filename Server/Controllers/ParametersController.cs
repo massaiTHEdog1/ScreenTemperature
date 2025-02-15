@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using ScreenTemperature;
 using ScreenTemperature.DTOs;
 using ScreenTemperature.Entities;
 using ScreenTemperature.Mappers;
@@ -11,14 +12,14 @@ using System.ComponentModel.DataAnnotations;
 public class ParametersController(IParametersService parametersService)
 {
     [HttpGet("/api/parameters")]
-    public IResult GetParameters()
+    public async Task<IResult> GetParametersAsync()
     {
-        return TypedResults.Ok(parametersService.GetParameters());
+        return TypedResults.Ok(await parametersService.GetParametersAsync());
     }
 
     [HttpPut("/api/parameters")]
-    public IResult UpdateParameters([FromBody][Required] Parameters parameters)
+    public async Task<IResult> UpdateParametersAsync([FromBody][Required] ParametersDto parameters)
     {
-        return TypedResults.Ok(parametersService.UpdateParameters(parameters));
+        return TypedResults.Ok(await parametersService.UpdateParametersAsync(parameters));
     }
 }

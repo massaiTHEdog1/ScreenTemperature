@@ -1,6 +1,10 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
+using ScreenTemperature.DTOs;
+using ScreenTemperature.DTOs.Configurations;
 using ScreenTemperature.Entities;
+using ScreenTemperature.Entities.Configurations;
 using System.Diagnostics;
 using System.Reflection;
 
@@ -8,15 +12,16 @@ namespace ScreenTemperature.Services;
 
 public interface IParametersService
 {
-    Parameters GetParameters();
-    Parameters UpdateParameters(Parameters parameters);
+    Task<ParametersDto> GetParametersAsync();
+    Task<ParametersDto> UpdateParametersAsync(ParametersDto parameters);
 }
 
-public class ParametersService(ILogger<ParametersService> logger) : IParametersService
+public class ParametersService(ILogger<ParametersService> logger, DatabaseContext databaseContext) : IParametersService
 {
     private const string _runKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+    private const string _minimizeOnStartupKey = "MinimizeOnStartup";
 
-    public Parameters GetParameters()
+    public async Task<ParametersDto> GetParametersAsync()
     {
         var startAppOnUserLogin = false;
 
@@ -32,15 +37,18 @@ public class ParametersService(ILogger<ParametersService> logger) : IParametersS
             }
         }
 
-        return new Parameters()
+        var minimizeOnStartupKeyValue = await databaseContext.Parameters.SingleOrDefaultAsync(x => x.Key == _minimizeOnStartupKey);
+
+        return new ParametersDto()
         {
             StartApplicationOnUserLogin = startAppOnUserLogin,
+            MinimizeOnStartup = minimizeOnStartupKeyValue != null ? bool.Parse(minimizeOnStartupKeyValue.Value) : false
         };
     }
 
-    public Parameters UpdateParameters(Parameters newParameters)
+    public async Task<ParametersDto> UpdateParametersAsync(ParametersDto newParameters)
     {
-        var currentParameters = GetParameters();
+        var currentParameters = await GetParametersAsync();
 
         if (newParameters.StartApplicationOnUserLogin != currentParameters.StartApplicationOnUserLogin)
         {
@@ -67,6 +75,22 @@ public class ParametersService(ILogger<ParametersService> logger) : IParametersS
                     }
                 }
             }
+        }
+
+        if (newParameters.MinimizeOnStartup != currentParameters.MinimizeOnStartup)
+        {
+            var minimizeOnStartupKeyValue = await databaseContext.Parameters.SingleOrDefaultAsync(x => x.Key == _minimizeOnStartupKey);
+
+            if (minimizeOnStartupKeyValue == null)
+            {
+                minimizeOnStartupKeyValue = new Parameter() { Key = _minimizeOnStartupKey };
+
+                databaseContext.Parameters.Add(minimizeOnStartupKeyValue);
+            }
+
+            minimizeOnStartupKeyValue.Value = newParameters.MinimizeOnStartup.ToString();
+
+            await databaseContext.SaveChangesAsync();
         }
 
         return newParameters;
