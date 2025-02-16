@@ -3,6 +3,7 @@ using ScreenTemperature.Entities;
 using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Text;
 using WindowsDisplayAPI.Native.Structures;
 
 namespace ScreenTemperature;
@@ -297,7 +298,10 @@ internal static class Win32
     [DllImport("kernel32.dll")]
     public static extern IntPtr GetConsoleWindow();
 
-    [DllImport("kernel32.dll", SetLastError = true)]
+    [DllImport("kernel32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool AllocConsole();
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+    public static extern uint GetModuleFileName(IntPtr hModule, StringBuilder lpFilename, uint nSize);
 }

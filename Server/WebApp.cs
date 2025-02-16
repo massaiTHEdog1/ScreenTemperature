@@ -97,18 +97,26 @@ namespace ScreenTemperature
 
             Task.Run(async () =>
             {
-                #region Load screens in memory
-
-                var screenService = WebApplication.Services.GetService<IScreenService>();
-                await screenService.GetScreensAsync();// load screens in memory
-
-                #endregion
-
-                #region Register HotKeys
-
                 using (var scope = WebApplication.Services.CreateScope())
                 {
                     var databaseContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+
+                    #region Update parameters
+
+                    var parametersService = scope.ServiceProvider.GetRequiredService<IParametersService>();
+                    var parameters = await parametersService.GetParametersAsync();
+                    await parametersService.UpdateParametersAsync(parameters);
+
+                    #endregion
+
+                    #region Load screens in memory
+
+                    var screenService = scope.ServiceProvider.GetRequiredService<IScreenService>();
+                    await screenService.GetScreensAsync();// load screens in memory
+
+                    #endregion
+
+                    #region Register HotKeys
 
                     var keyBindings = await databaseContext.KeyBindings.ToListAsync();
 
@@ -118,35 +126,30 @@ namespace ScreenTemperature
                     }
 
                     HotKeyManager.HotKeyPressed += HotKeyManager_HotKeyPressed;
-                }
 
-                #endregion
+                    #endregion
 
-                #region Apply configurations
-
-                using (var scope = WebApplication.Services.CreateScope())
-                {
-                    var databaseContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+                    #region Apply configurations
 
                     var configurations = await databaseContext.Configurations.ToListAsync();
 
                     foreach (var config in configurations)
                     {
-                        if(config.ApplyAtStartup)
+                        if (config.ApplyAtStartup)
                         {
-                            if(config.ApplyBrightness)
+                            if (config.ApplyBrightness)
                                 await screenService.ApplyBrightnessToScreenAsync(config.Brightness, config.DevicePath);
 
-                            if(config is TemperatureConfiguration temperatureConfiguration && temperatureConfiguration.ApplyIntensity)
+                            if (config is TemperatureConfiguration temperatureConfiguration && temperatureConfiguration.ApplyIntensity)
                                 await screenService.ApplyKelvinToScreenAsync(temperatureConfiguration.Intensity, temperatureConfiguration.DevicePath);
 
                             if (config is ColorConfiguration colorConfiguration && colorConfiguration.ApplyColor)
                                 await screenService.ApplyColorToScreenAsync(colorConfiguration.Color, colorConfiguration.DevicePath);
                         }
                     }
-                }
 
-                #endregion
+                    #endregion
+                }
             });
 
             WebApplication.UseMiddleware<ExceptionMiddleware>();

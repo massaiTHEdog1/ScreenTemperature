@@ -7,6 +7,7 @@ using ScreenTemperature.Hubs;
 using ScreenTemperature.Middlewares;
 using ScreenTemperature.Services;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Windows;
 using Vernou.Swashbuckle.HttpResultsAdapter;
@@ -16,6 +17,7 @@ namespace ScreenTemperature
     public partial class App : Application
     {
         private CancellationTokenSource _cancellationTokenSource;
+        public static string DataFolder = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ScreenTemperature");
 
         public App()
         {

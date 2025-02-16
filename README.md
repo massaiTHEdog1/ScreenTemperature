@@ -38,7 +38,17 @@ Assign your configurations to hot keys.
 
 ## Build
 
-Build easily with make :
+### Requirements
+
+For building the installer, you need these softwares and add them to PATH:
+
+* [InnoSetup](https://jrsoftware.org/isdl.php) for building an installer.
+* [Windows SDK](https://developer.microsoft.com/fr-fr/windows/downloads/windows-sdk/) for signing the installer.
+* [Make (windows)](https://gnuwin32.sourceforge.net/packages/make.htm) for executing build pipeline.
+
+### Command
+
+In root folder run :
 
 ```
 make

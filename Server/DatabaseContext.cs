@@ -27,15 +27,9 @@ public class DatabaseContext : DbContext
         get
         {
             if (_webHostEnvironment.IsDevelopment())
-            {
                 return "database.db";
-            }
             else
-            {
-                var localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-                return Path.Join(localAppDataPath, "ScreenTemperature", "database.db");
-            }
+                return Path.Join(App.DataFolder, "database.db");
         }
     }
 

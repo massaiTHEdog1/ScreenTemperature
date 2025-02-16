@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "ScreenTemperature"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "massaiTHEdog"
 #define MyAppURL "https://github.com/massaiTHEdog1/ScreenTemperature"
 #define MyAppExeName "ScreenTemperature.exe"
@@ -34,6 +34,8 @@ PrivilegesRequired=lowest
 OutputBaseFilename=setup
 SolidCompression=yes
 WizardStyle=modern
+SignTool=MsSign $f
+CloseApplications=force
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -52,3 +54,5 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
+[UninstallRun]
+Filename: "{cmd}"; Parameters: "/C ""taskkill /im ScreenTemperature.exe /f /t"

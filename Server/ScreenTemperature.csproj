@@ -2,8 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
-	<OutputType>WinExe</OutputType>
-	<UseWPF>true</UseWPF>
+		<AssemblyVersion>1.0.1</AssemblyVersion>
+		<OutputType>WinExe</OutputType>
+		<UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>

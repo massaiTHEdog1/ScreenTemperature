@@ -6,6 +6,6 @@
         Loaded="Window_OnLoaded"
         StateChanged="Window_StateChanged">
     <DockPanel>
-        <wv2:WebView2 Name="webView" Source="{Binding SourceUrl}" />
+        <wv2:WebView2 Name="webView" />
     </DockPanel>
 </Window>
