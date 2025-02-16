@@ -2,13 +2,14 @@ using Microsoft.Extensions.Logging;
 using ScreenTemperature.Entities;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using WindowsDisplayAPI;
 using static ScreenTemperature.Win32;
 
 namespace ScreenTemperature.Services;
 
 public interface IScreenService
 {
-    Task<IList<Screen>> GetScreensAsync(bool fromCache = true);
+    Task<IList<Screen>> GetScreensAsync();
     Task<bool> ApplyKelvinToScreenAsync(int value, string devicePath);
     Task<bool> ApplyColorToScreenAsync(string stringColor, string devicePath);
     Task<bool> ApplyBrightnessToScreenAsync(int brightness, string devicePath);
@@ -64,24 +65,35 @@ public class ScreenService(ILogger<ScreenService> logger) : IScreenService
         return true;
     }
 
-    private IList<Screen> _screens = new List<Screen>();
+    private IList<Screen> _screens;
+    private Task _screensLoadTask;
 
     /// <summary>
     /// Returns a list of all attached screens on this machine
     /// </summary>
-    public async Task<IList<Screen>> GetScreensAsync(bool fromCache = true)
+    public async Task<IList<Screen>> GetScreensAsync()
     {
-        if(fromCache && _screens.Count > 0) return _screens;
-
-        foreach(var screen in _screens)
+        if (_screensLoadTask != null)
         {
-            // clean up
-            DestroyPhysicalMonitors(1, screen.PhysicalMonitors);
+            await _screensLoadTask;
+
+            foreach (var screen in _screens)// for each screen, refresh its physical monitor handle (they can change for example when the screen goes to sleep mode)
+            {
+                if (!screen.IsDDCSupported) continue;
+
+                DestroyPhysicalMonitors(1, screen.PhysicalMonitors);// delete previous handles
+                var physicalMonitor = GetScreenPhysicalMonitor(screen.DevicePath, out var physicalMonitors);// get new ones
+
+                screen.PhysicalMonitors = physicalMonitors;
+            }
+
+            return _screens;
         }
 
+        _screensLoadTask = new Task(() => { });
         _screens = new List<Screen>();
 
-        foreach (var display in WindowsDisplayAPI.Display.GetDisplays())// for each windows display
+        foreach (var display in Display.GetDisplays())// for each windows display
         {
             if(!GetScreenPhysicalMonitor(display.DevicePath, out PHYSICAL_MONITOR[] physicalMonitors)) continue;
 
@@ -116,6 +128,8 @@ public class ScreenService(ILogger<ScreenService> logger) : IScreenService
                 PhysicalMonitors = physicalMonitors,
             });
         }
+
+        _screensLoadTask.Start();
 
         return _screens;
     }
@@ -240,7 +254,8 @@ public class ScreenService(ILogger<ScreenService> logger) : IScreenService
 
     public async Task<bool> ApplyBrightnessToScreenAsync(int brightness, string devicePath)
     {
-        var screen = _screens.FirstOrDefault(x => x.DevicePath ==  devicePath);
+        var screens = await GetScreensAsync();
+        var screen = screens.FirstOrDefault(x => x.DevicePath ==  devicePath);
 
         if (screen == null) throw new Exception($"Could not find screen '{devicePath}'.");
 
