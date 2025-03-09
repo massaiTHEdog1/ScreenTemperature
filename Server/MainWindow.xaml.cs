@@ -14,7 +14,7 @@ namespace ScreenTemperature
 #if DEBUG
         public string SourceUrl { get; set; } = "http://localhost:5173/";
 #else
-        public string SourceUrl { get; set; } = "https://localhost:61983/";
+        public string SourceUrl { get; set; } = "http://localhost:61983/";
 #endif
 
         public MainWindow()
