@@ -182,7 +182,7 @@ namespace ScreenTemperature
 
             WebApplication.MapHub<Hub>("/hub");
 
-            WebApplication.Urls.Add("https://localhost:61983");
+            WebApplication.Urls.Add("http://localhost:61983");
 
             Task = WebApplication.RunAsync(cancellationToken);
         }

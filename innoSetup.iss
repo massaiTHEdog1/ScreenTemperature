@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "ScreenTemperature"
-#define MyAppVersion "1.0.2"
+#define MyAppVersion "1.0.3"
 #define MyAppPublisher "massaiTHEdog"
 #define MyAppURL "https://github.com/massaiTHEdog1/ScreenTemperature"
 #define MyAppExeName "ScreenTemperature.exe"
